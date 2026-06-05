@@ -308,23 +308,50 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final chap = sortedChapters[index];
+                          final history = historyAsync.valueOrNull;
+                          final isLastRead = history != null && history['chapter_slug'] == chap.chapterSlug;
+
                           return Column(
                             children: [
                               ListTile(
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                 title: Text(
                                   'Chương ${chap.chapterName}',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: isLastRead ? AppColors.primaryBlue : null,
+                                  ),
                                 ),
                                 subtitle: chap.chapterTitle.isNotEmpty
                                     ? Text(
                                         chap.chapterTitle,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(fontSize: 12),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: isLastRead ? AppColors.primaryBlue.withOpacity(0.7) : null,
+                                        ),
                                       )
                                     : null,
-                                trailing: const Icon(Icons.chevron_right, size: 18),
+                                trailing: isLastRead
+                                    ? Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryBlue.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: AppColors.primaryBlue, width: 1),
+                                        ),
+                                        child: const Text(
+                                          'Đang đọc',
+                                          style: TextStyle(
+                                            color: AppColors.primaryBlue,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      )
+                                    : const Icon(Icons.chevron_right, size: 18),
                                 onTap: () {
                                   context.push(
                                     '/reader/${widget.slug}/${chap.chapterSlug}',

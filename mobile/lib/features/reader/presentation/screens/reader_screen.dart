@@ -9,6 +9,8 @@ import '../../../../core/constants/colors.dart';
 import '../../../comic/data/comic_repository.dart';
 import '../../domain/chapter_detail_model.dart';
 import '../reader_providers.dart';
+import '../../../comic/presentation/comic_detail_providers.dart';
+import '../../../comic/domain/comic_detail_model.dart';
 
 class ReaderScreen extends ConsumerStatefulWidget {
   final String comicSlug;
@@ -95,6 +97,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final apiDataUrl = widget.apiDataUrl ?? '';
     final chapterAsync = ref.watch(readerChapterDetailProvider(apiDataUrl));
     final settings = ref.watch(readerSettingsProvider);
+    final comicDetailAsync = ref.watch(comicDetailProvider(widget.comicSlug));
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -150,7 +153,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           if (_showUI) _buildTopBar(context, chapterAsync),
 
           // 4. Bottom Controls Overlay
-          if (_showUI) _buildBottomControls(context, settings),
+          if (_showUI) _buildBottomControls(context, settings, comicDetailAsync),
         ],
       ),
     );
@@ -243,7 +246,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
-  Widget _buildBottomControls(BuildContext context, ReaderSettings settings) {
+  Widget _buildBottomControls(
+    BuildContext context,
+    ReaderSettings settings,
+    AsyncValue<ComicDetailInfoModel> comicDetailAsync,
+  ) {
     return Positioned(
       bottom: 0,
       left: 0,
@@ -254,6 +261,85 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // Chapter Navigation (Prev / Next Buttons)
+            comicDetailAsync.when(
+              data: (comic) {
+                final chaptersList = comic.chapters.isNotEmpty
+                    ? comic.chapters.first.serverData
+                    : <ChapterModel>[];
+                final currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
+                
+                final hasPrev = currentIdx > 0;
+                final hasNext = currentIdx != -1 && currentIdx < chaptersList.length - 1;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Row(
+                    children: [
+                      // Prev Chapter Button
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: hasPrev
+                              ? () {
+                                  final prevChap = chaptersList[currentIdx - 1];
+                                  context.pushReplacement(
+                                    '/reader/${widget.comicSlug}/${prevChap.chapterSlug}',
+                                    extra: prevChap.chapterApiData,
+                                  );
+                                }
+                              : null,
+                          icon: Icon(Icons.navigate_before, color: hasPrev ? Colors.white : Colors.white24, size: 20),
+                          label: Text(
+                            'Chương trước',
+                            style: TextStyle(
+                              color: hasPrev ? Colors.white : Colors.white24,
+                              fontSize: 12,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: hasPrev ? Colors.white38 : Colors.white12),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Next Chapter Button
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: hasNext
+                              ? () {
+                                  final nextChap = chaptersList[currentIdx + 1];
+                                  context.pushReplacement(
+                                    '/reader/${widget.comicSlug}/${nextChap.chapterSlug}',
+                                    extra: nextChap.chapterApiData,
+                                  );
+                                }
+                              : null,
+                          icon: Icon(Icons.navigate_next, color: hasNext ? Colors.white : Colors.white38, size: 20),
+                          label: Text(
+                            'Chương sau',
+                            style: TextStyle(
+                              color: hasNext ? Colors.white : Colors.white38,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: hasNext ? AppColors.primaryBlue : Colors.white12,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+
             // Page Indicator
             Text(
               'Trang $_currentPage / $_totalPages',
