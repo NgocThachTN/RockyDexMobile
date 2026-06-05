@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
 import '../domain/comic_model.dart';
@@ -21,7 +22,11 @@ class HomeRepository {
         queryParameters: {'page': page},
       );
 
-      final data = response.data['data'];
+      var responseData = response.data;
+      if (responseData is String) {
+        responseData = jsonDecode(responseData);
+      }
+      final data = responseData['data'];
       final items = data['items'] as List;
 
       // Extract CDN Domain if present
@@ -48,7 +53,11 @@ class HomeRepository {
   Future<List<CategoryModel>> getCategories() async {
     try {
       final response = await _dio.get('${ApiConstants.otruyenBaseUrl}${ApiConstants.pathCategories}');
-      final items = response.data['data']['items'] as List;
+      var responseData = response.data;
+      if (responseData is String) {
+        responseData = jsonDecode(responseData);
+      }
+      final items = responseData['data']['items'] as List;
       return items.map((item) => CategoryModel.fromJson(item as Map<String, dynamic>)).toList();
     } catch (e) {
       throw Exception('Không thể tải thể loại: $e');

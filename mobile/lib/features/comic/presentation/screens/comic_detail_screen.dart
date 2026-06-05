@@ -24,7 +24,6 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
     final historyAsync = ref.watch(comicHistoryProvider(widget.slug));
     final favState = ref.watch(favoriteNotifierProvider(widget.slug));
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: detailAsync.when(

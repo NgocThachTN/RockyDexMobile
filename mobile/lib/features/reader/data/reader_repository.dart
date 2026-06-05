@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/dio_client.dart';
@@ -16,7 +17,11 @@ class ReaderRepository {
     try {
       // Fetch directly from the absolute URL
       final response = await _dio.get(apiDataUrl);
-      final rawData = response.data['data'];
+      var responseData = response.data;
+      if (responseData is String) {
+        responseData = jsonDecode(responseData);
+      }
+      final rawData = responseData['data'];
       return ChapterDetailInfoModel.fromJson(rawData as Map<String, dynamic>);
     } catch (e) {
       throw Exception('Không thể tải trang truyện: $e');

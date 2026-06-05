@@ -29,7 +29,6 @@ class ProfileScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final statsAsync = ref.watch(readingStatsProvider);
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(

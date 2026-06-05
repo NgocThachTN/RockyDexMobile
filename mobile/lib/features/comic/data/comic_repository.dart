@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/api_constants.dart';
@@ -26,7 +27,11 @@ class ComicRepository {
   Future<ComicDetailInfoModel> getComicDetail(String slug) async {
     try {
       final response = await _dio.get('${ApiConstants.otruyenBaseUrl}${ApiConstants.pathComicDetail}/$slug');
-      final rawData = response.data['data'];
+      var responseData = response.data;
+      if (responseData is String) {
+        responseData = jsonDecode(responseData);
+      }
+      final rawData = responseData['data'];
       final rawItem = rawData['item'];
       final cdnImage = rawData['APP_DOMAIN_CDN_IMAGE'] as String? ?? ApiConstants.otruyenImageBaseCdn;
 
