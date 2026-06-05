@@ -1,8 +1,13 @@
 class ApiConstants {
   // OTruyen API Endpoints
   static const String otruyenBaseUrl = 'https://otruyenapi.com/v1/api';
-  static const String otruyenChapterBaseUrl = 'https://sv1.otruyencdn.com/v1/api/chapter';
-  static const String otruyenImageBaseCdn = 'https://img.otruyenapi.com/uploads/comics';
+  static const List<String> otruyenBaseUrls = [
+    otruyenBaseUrl,
+    'https://www.otruyenapi.com/v1/api',
+  ];
+  static const String otruyenChapterBaseUrl =
+      'https://sv1.otruyencdn.com/v1/api/chapter';
+  static const String otruyenImageBaseCdn = 'https://img.otruyenapi.com';
 
   // RockyDex Backend API Endpoints (Local development)
   // For android emulator, use 10.0.2.2 instead of localhost
@@ -18,7 +23,8 @@ class ApiConstants {
 
   // List types
   static const String listNew = 'truyen-moi';
-  static const String listFeatured = 'truyen-noi-bat';
+  // UI-only value. Featured comics are loaded from /home, not /danh-sach/{type}.
+  static const String listFeatured = 'home';
   static const String listCompleted = 'hoan-thanh';
   static const String listOngoing = 'dang-phat-hanh';
   static const String listComingSoon = 'sap-ra-mat';

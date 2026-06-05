@@ -5,7 +5,7 @@ import '../../../core/constants/api_constants.dart';
 
 final featuredComicsProvider = FutureProvider<List<ComicModel>>((ref) async {
   final repo = ref.watch(homeRepositoryProvider);
-  return repo.getComicsList(ApiConstants.listFeatured);
+  return repo.getHomeComics();
 });
 
 final newComicsProvider = FutureProvider<List<ComicModel>>((ref) async {

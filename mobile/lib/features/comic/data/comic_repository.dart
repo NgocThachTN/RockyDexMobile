@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/network/otruyen_api_client.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../auth/presentation/auth_notifier.dart';
 import '../domain/comic_detail_model.dart';
@@ -16,8 +17,11 @@ final comicRepositoryProvider = Provider<ComicRepository>((ref) {
 class ComicRepository {
   final Dio _dio;
   final AuthState _authState;
+  late final OtruyenApiClient _otruyenApi;
 
-  ComicRepository(this._dio, this._authState);
+  ComicRepository(this._dio, this._authState) {
+    _otruyenApi = OtruyenApiClient(_dio);
+  }
 
   bool get _isLoggedIn => _authState.user != null;
 
@@ -26,14 +30,15 @@ class ComicRepository {
 
   Future<ComicDetailInfoModel> getComicDetail(String slug) async {
     try {
-      final response = await _dio.get('${ApiConstants.otruyenBaseUrl}${ApiConstants.pathComicDetail}/$slug');
+      final response = await _otruyenApi.get('${ApiConstants.pathComicDetail}/$slug');
       var responseData = response.data;
       if (responseData is String) {
         responseData = jsonDecode(responseData);
       }
       final rawData = responseData['data'];
       final rawItem = rawData['item'];
-      final cdnImage = rawData['APP_DOMAIN_CDN_IMAGE'] as String? ?? ApiConstants.otruyenImageBaseCdn;
+      final cdnImage = rawData['APP_DOMAIN_CDN_IMAGE'] as String? ??
+          ApiConstants.otruyenImageBaseCdn;
 
       // Make cover URL absolute
       final rawThumb = rawItem['thumb_url'] as String;

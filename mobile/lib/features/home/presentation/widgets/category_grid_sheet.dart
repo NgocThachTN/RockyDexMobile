@@ -54,58 +54,84 @@ class CategoryGridSheet extends ConsumerWidget {
           ),
           const Divider(height: 1),
           Expanded(
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 2.8,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-              ),
-              itemCount: state.categories.length,
-              itemBuilder: (context, index) {
-                final cat = state.categories[index];
-                final isSelected = state.selectedCategorySlug == cat.slug;
-
-                return InkWell(
-                  onTap: () {
-                    ref.read(homeProvider.notifier).selectCategory(cat.slug);
-                    Navigator.pop(context);
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primaryBlue.withOpacity(0.12)
-                          : (isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5)),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primaryBlue
-                            : (isDark ? Colors.transparent : Colors.grey.withOpacity(0.2)),
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        cat.name,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: isSelected
-                              ? AppColors.primaryBlue
-                              : (isDark ? Colors.white : Colors.black87),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+            child: _buildBody(context, ref, isDark),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, WidgetRef ref, bool isDark) {
+    if (state.isCategoriesLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primaryBlue,
+        ),
+      );
+    }
+
+    if (state.categories.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ElevatedButton.icon(
+            onPressed: () => ref.read(homeProvider.notifier).reloadCategories(),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Tai lai the loai'),
+          ),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 2.8,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: state.categories.length,
+      itemBuilder: (context, index) {
+        final cat = state.categories[index];
+        final isSelected = state.selectedCategorySlug == cat.slug;
+
+        return InkWell(
+          onTap: () {
+            ref.read(homeProvider.notifier).selectCategory(cat.slug);
+            Navigator.pop(context);
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.primaryBlue.withOpacity(0.12)
+                  : (isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF5F5F5)),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.primaryBlue
+                    : (isDark ? Colors.transparent : Colors.grey.withOpacity(0.2)),
+                width: 1.5,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                cat.name,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: isSelected
+                      ? AppColors.primaryBlue
+                      : (isDark ? Colors.white : Colors.black87),
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

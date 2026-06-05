@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/network/otruyen_api_client.dart';
 import '../../home/domain/comic_model.dart';
 
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
@@ -15,14 +16,17 @@ final searchRepositoryProvider = Provider<SearchRepository>((ref) {
 class SearchRepository {
   final Dio _dio;
   final SharedPreferences _prefs;
+  late final OtruyenApiClient _otruyenApi;
   static const String _historyKey = 'search_history_list';
 
-  SearchRepository(this._dio, this._prefs);
+  SearchRepository(this._dio, this._prefs) {
+    _otruyenApi = OtruyenApiClient(_dio);
+  }
 
   Future<List<ComicModel>> searchComics(String keyword, {int page = 1}) async {
     try {
-      final response = await _dio.get(
-        '${ApiConstants.otruyenBaseUrl}${ApiConstants.pathSearch}',
+      final response = await _otruyenApi.get(
+        ApiConstants.pathSearch,
         queryParameters: {
           'keyword': keyword,
           'page': page,
@@ -35,7 +39,8 @@ class SearchRepository {
       }
       final data = responseData['data'];
       final items = data['items'] as List;
-      final cdnImage = data['APP_DOMAIN_CDN_IMAGE'] as String? ?? ApiConstants.otruyenImageBaseCdn;
+      final cdnImage = data['APP_DOMAIN_CDN_IMAGE'] as String? ??
+          ApiConstants.otruyenImageBaseCdn;
 
       return items.map((item) {
         final rawThumb = item['thumb_url'] as String;
