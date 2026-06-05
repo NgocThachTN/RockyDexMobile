@@ -20,35 +20,43 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Set up Java JDK
+      # 2. Extract version from pubspec.yaml
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | sed 's/+.*//')
+          echo "APP_VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+
+      # 3. Set up Java JDK
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3. Set up Flutter
+      # 4. Set up Flutter
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.5' # Uses the version we identified on your machine
+          flutter-version: '3.41.5'
           channel: 'stable'
           cache: true
 
-      # 4. Fetch dependencies
+      # 5. Fetch dependencies
       - name: Install dependencies
         run: flutter pub get
 
-      # 5. Build Release APK
+      # 6. Build Release APK
       - name: Build APK
         run: |
           flutter build apk --release --no-pub
-          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/rockydex.apk
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/rockydex-v${{ steps.version.outputs.APP_VERSION }}.apk
 
-      # 6. Upload APK to GitHub Release
+      # 7. Upload APK to GitHub Release
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: mobile/build/app/outputs/flutter-apk/rockydex.apk
+          files: mobile/build/app/outputs/flutter-apk/rockydex-v${{ steps.version.outputs.APP_VERSION }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
