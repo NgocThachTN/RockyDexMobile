@@ -1,0 +1,33 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backend secrets and binaries
+backend/configs/config.env
+backend/bin/
+backend/dist/
+backend/main
+backend/deployments/pgdata/
+
+# Flutter mobile build & local files
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/ios/Flutter/Flutter.podspec
+mobile/ios/Flutter/Generated.xcconfig
+mobile/ios/Flutter/flutter_export_environment.sh
+mobile/android/local.properties
+mobile/android/key.properties
+mobile/android/app/shared_preferences.xml
+*.log

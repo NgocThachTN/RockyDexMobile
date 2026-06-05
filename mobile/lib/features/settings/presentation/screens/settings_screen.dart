@@ -1,0 +1,143 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/constants/colors.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../../reader/presentation/reader_providers.dart';
+
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return ThemeModeNotifier(prefs);
+});
+
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  final SharedPreferences _prefs;
+
+  ThemeModeNotifier(this._prefs) : super(ThemeMode.system) {
+    _loadTheme();
+  }
+
+  void _loadTheme() {
+    final themeStr = _prefs.getString('app_theme_mode') ?? 'system';
+    switch (themeStr) {
+      case 'light':
+        state = ThemeMode.light;
+        break;
+      case 'dark':
+        state = ThemeMode.dark;
+        break;
+      default:
+        state = ThemeMode.system;
+    }
+  }
+
+  Future<void> updateTheme(ThemeMode mode) async {
+    state = mode;
+    String themeStr = 'system';
+    if (mode == ThemeMode.light) themeStr = 'light';
+    if (mode == ThemeMode.dark) themeStr = 'dark';
+    await _prefs.setString('app_theme_mode', themeStr);
+  }
+}
+
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentTheme = ref.watch(themeModeProvider);
+    final readerSettings = ref.watch(readerSettingsProvider);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Cài Đặt'),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // 1. Theme Settings
+          Text(
+            'Giao diện',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Column(
+              children: [
+                RadioListTile<ThemeMode>(
+                  title: const Text('Sáng'),
+                  value: ThemeMode.light,
+                  groupValue: currentTheme,
+                  activeColor: AppColors.primaryBlue,
+                  onChanged: (mode) {
+                    if (mode != null) {
+                      ref.read(themeModeProvider.notifier).updateTheme(mode);
+                    }
+                  },
+                ),
+                const Divider(height: 1, indent: 16),
+                RadioListTile<ThemeMode>(
+                  title: const Text('Tối'),
+                  value: ThemeMode.dark,
+                  groupValue: currentTheme,
+                  activeColor: AppColors.primaryBlue,
+                  onChanged: (mode) {
+                    if (mode != null) {
+                      ref.read(themeModeProvider.notifier).updateTheme(mode);
+                    }
+                  },
+                ),
+                const Divider(height: 1, indent: 16),
+                RadioListTile<ThemeMode>(
+                  title: const Text('Mặc định hệ thống'),
+                  value: ThemeMode.system,
+                  groupValue: currentTheme,
+                  activeColor: AppColors.primaryBlue,
+                  onChanged: (mode) {
+                    if (mode != null) {
+                      ref.read(themeModeProvider.notifier).updateTheme(mode);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // 2. Reader Settings
+          Text(
+            'Trình đọc truyện',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  title: const Text('Chế độ đọc'),
+                  subtitle: Text(
+                    readerSettings.layout == 'vertical'
+                        ? 'Cuộn dọc liên tục'
+                        : 'Lướt ngang từng trang',
+                  ),
+                  trailing: const Icon(Icons.swap_horiz, color: AppColors.primaryBlue),
+                  onTap: () {
+                    final nextLayout =
+                        readerSettings.layout == 'vertical' ? 'horizontal' : 'vertical';
+                    ref.read(readerSettingsProvider.notifier).updateLayout(nextLayout);
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

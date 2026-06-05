@@ -1,0 +1,301 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
+import '../../../../core/constants/colors.dart';
+import '../../../comic/data/comic_repository.dart';
+import '../../domain/chapter_detail_model.dart';
+import '../reader_providers.dart';
+
+class ReaderScreen extends ConsumerStatefulWidget {
+  final String comicSlug;
+  final String chapterSlug;
+  final String? apiDataUrl;
+
+  const ReaderScreen({
+    super.key,
+    required this.comicSlug,
+    required this.chapterSlug,
+    this.apiDataUrl,
+  });
+
+  @override
+  ConsumerState<ReaderScreen> createState() => _ReaderScreenState();
+}
+
+class _ReaderScreenState extends ConsumerState<ReaderScreen> {
+  bool _showUI = true;
+  int _currentPage = 1;
+  int _totalPages = 1;
+  late final ScrollController _scrollController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
+
+    // Enter fullscreen mode
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void dispose() {
+    // Exit fullscreen
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.hasClients) {
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final currentScroll = _scrollController.position.pixels;
+      if (maxScroll > 0) {
+        final progress = (currentScroll / maxScroll * 100).toInt();
+        final page = ((currentScroll / maxScroll) * _totalPages).clamp(1, _totalPages).toInt();
+
+        if (page != _currentPage) {
+          setState(() {
+            _currentPage = page;
+          });
+        }
+
+        // Throttle/Save progress periodically
+        _saveReadingProgress(progress);
+      }
+    }
+  }
+
+  void _saveReadingProgress(int progressPercent) {
+    // Save to repositories (local & remote)
+    ref.read(comicRepositoryProvider).saveHistory(
+          comicSlug: widget.comicSlug,
+          comicName: widget.comicSlug.replaceAll('-', ' '), // approximate name
+          comicThumb: '', // we can omit or sync from details
+          chapterSlug: widget.chapterSlug,
+          chapterName: widget.chapterSlug.replaceAll('chap-', ''),
+          progressPercent: progressPercent,
+        );
+  }
+
+  void _toggleUI() {
+    setState(() {
+      _showUI = !_showUI;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // If apiDataUrl is missing, we fetch it by fallback.
+    // However, it is always passed from details screen through GoRouter extra.
+    final apiDataUrl = widget.apiDataUrl ?? '';
+    final chapterAsync = ref.watch(readerChapterDetailProvider(apiDataUrl));
+    final settings = ref.watch(readerSettingsProvider);
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // 1. Pages Viewer
+          GestureDetector(
+            onTap: _toggleUI,
+            child: chapterAsync.when(
+              data: (chapter) {
+                final pages = chapter.item.chapterImage;
+                _totalPages = pages.length;
+
+                final cdn = chapter.domainCdn;
+                final path = chapter.item.chapterPath;
+
+                // Build absolute image URLs
+                final imageUrls = pages.map((page) => '$cdn/$path/${page.imageFile}').toList();
+
+                if (settings.layout == 'horizontal') {
+                  return _buildHorizontalGallery(imageUrls);
+                } else {
+                  return _buildVerticalScroll(imageUrls);
+                }
+              },
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryBlue),
+              ),
+              error: (err, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Lỗi tải chương: $err', style: const TextStyle(color: Colors.white)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.invalidate(readerChapterDetailProvider(apiDataUrl)),
+                      child: const Text('Thử lại'),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // 2. Brightness Overlay
+          IgnorePointer(
+            child: Container(
+              color: Colors.black.withOpacity(1.0 - settings.brightness),
+            ),
+          ),
+
+          // 3. Top Navigation Bar Overlay
+          if (_showUI) _buildTopBar(context, chapterAsync),
+
+          // 4. Bottom Controls Overlay
+          if (_showUI) _buildBottomControls(context, settings),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerticalScroll(List<String> urls) {
+    return ListView.builder(
+      controller: _scrollController,
+      padding: EdgeInsets.zero,
+      itemCount: urls.length,
+      itemBuilder: (context, index) {
+        return CachedNetworkImage(
+          imageUrl: urls[index],
+          fit: BoxFit.fitWidth,
+          width: double.infinity,
+          placeholder: (context, url) => Container(
+            height: 400,
+            color: Colors.black,
+            child: const Center(
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+            ),
+          ),
+          errorWidget: (context, url, error) => Container(
+            height: 200,
+            color: Colors.grey[900],
+            child: const Center(
+              child: Icon(Icons.broken_image, color: Colors.white30, size: 50),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHorizontalGallery(List<String> urls) {
+    return PhotoViewGallery.builder(
+      scrollPhysics: const BouncingScrollPhysics(),
+      builder: (BuildContext context, int index) {
+        return PhotoViewGalleryPageOptions(
+          imageProvider: CachedNetworkImageProvider(urls[index]),
+          initialScale: PhotoViewComputedScale.contained,
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 2.5,
+        );
+      },
+      itemCount: urls.length,
+      loadingBuilder: (context, event) => const Center(
+        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+      ),
+      onPageChanged: (index) {
+        setState(() {
+          _currentPage = index + 1;
+        });
+        _saveReadingProgress((_currentPage / _totalPages * 100).toInt());
+      },
+    );
+  }
+
+  Widget _buildTopBar(BuildContext context, AsyncValue<ChapterDetailInfoModel> chapterAsync) {
+    final title = chapterAsync.when(
+      data: (c) => '${c.item.comicName} - Ch. ${c.item.chapterName}',
+      loading: () => 'Đang tải...',
+      error: (_, __) => 'Lỗi tải trang',
+    );
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8, bottom: 12),
+        color: Colors.black.withOpacity(0.85),
+        child: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => context.pop(),
+            ),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomControls(BuildContext context, ReaderSettings settings) {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        color: Colors.black.withOpacity(0.85),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Page Indicator
+            Text(
+              'Trang $_currentPage / $_totalPages',
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+
+            // Layout & Brightness controls
+            Row(
+              children: [
+                // Layout selector icon
+                IconButton(
+                  icon: Icon(
+                    settings.layout == 'vertical' ? Icons.splitscreen : Icons.menu_book,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    final nextLayout = settings.layout == 'vertical' ? 'horizontal' : 'vertical';
+                    ref.read(readerSettingsProvider.notifier).updateLayout(nextLayout);
+                  },
+                ),
+                const SizedBox(width: 8),
+
+                // Brightness Slider
+                const Icon(Icons.brightness_medium, color: Colors.white54, size: 18),
+                Expanded(
+                  child: Slider(
+                    value: settings.brightness,
+                    min: 0.1,
+                    max: 1.0,
+                    activeColor: AppColors.primaryBlue,
+                    inactiveColor: Colors.white24,
+                    onChanged: (val) {
+                      ref.read(readerSettingsProvider.notifier).updateBrightness(val);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
