@@ -12,6 +12,7 @@ import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/comic/presentation/screens/comic_detail_screen.dart';
 import '../../features/reader/presentation/screens/reader_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/update_screen.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 final shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -82,6 +83,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/update',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final currentVersion = extra['currentVersion'] as String? ?? '';
+          final latestVersion = extra['latestVersion'] as String? ?? '';
+          final downloadUrl = extra['downloadUrl'] as String? ?? '';
+          final changelog = extra['changelog'] as String? ?? '';
+          return UpdateScreen(
+            currentVersion: currentVersion,
+            latestVersion: latestVersion,
+            downloadUrl: downloadUrl,
+            changelog: changelog,
+          );
+        },
       ),
     ],
   );

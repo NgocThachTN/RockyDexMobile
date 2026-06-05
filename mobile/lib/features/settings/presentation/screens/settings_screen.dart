@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/services/update_service.dart';
 import '../../../reader/presentation/reader_providers.dart';
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return ThemeModeNotifier(prefs);
+});
+
+final packageInfoProvider = FutureProvider<PackageInfo>((ref) async {
+  return PackageInfo.fromPlatform();
 });
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
@@ -47,6 +53,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeModeProvider);
     final readerSettings = ref.watch(readerSettingsProvider);
+    final packageInfoAsync = ref.watch(packageInfoProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -131,6 +138,41 @@ class SettingsScreen extends ConsumerWidget {
                     final nextLayout =
                         readerSettings.layout == 'vertical' ? 'horizontal' : 'vertical';
                     ref.read(readerSettingsProvider.notifier).updateLayout(nextLayout);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // 3. Information & Updates
+          Text(
+            'Thông tin & Cập nhật',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue),
+                  title: const Text('Phiên bản hiện tại'),
+                  subtitle: packageInfoAsync.when(
+                    data: (info) => Text('${info.version}+${info.buildNumber}'),
+                    loading: () => const Text('Đang tải...'),
+                    error: (_, __) => const Text('Không rõ'),
+                  ),
+                ),
+                const Divider(height: 1, indent: 16),
+                ListTile(
+                  leading: const Icon(Icons.system_update_alt_rounded, color: AppColors.primaryBlue),
+                  title: const Text('Kiểm tra cập nhật'),
+                  subtitle: const Text('Kiểm tra phiên bản mới nhất từ GitHub'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    UpdateService.checkForUpdates(context, showNoUpdatePrompt: true);
                   },
                 ),
               ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/api_constants.dart';
+import '../../../../core/services/update_service.dart';
 import '../home_notifier.dart';
 import '../widgets/home_filter_section.dart';
 import '../widgets/comic_grid_card.dart';
@@ -22,6 +23,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UpdateService.checkForUpdates(context);
+    });
   }
 
   @override
