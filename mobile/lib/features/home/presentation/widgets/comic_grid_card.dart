@@ -102,6 +102,19 @@ class ComicGridCard extends StatelessWidget {
                       height: 1.25,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  // First Genre Tag
+                  if (comic.category.isNotEmpty)
+                    Text(
+                      comic.category.first.name,
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: isDark ? Colors.white38 : Colors.black38,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  else
+                    const SizedBox(height: 12),
                   const SizedBox(height: 6),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,

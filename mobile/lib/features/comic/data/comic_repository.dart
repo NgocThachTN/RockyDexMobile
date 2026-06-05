@@ -66,33 +66,11 @@ class ComicRepository {
 
   // Favorite / Bookmark Sync Operations
   Future<bool> isFavorite(String slug) async {
-    if (_isLoggedIn) {
-      try {
-        final response = await _dio.get('/favorites/check/$slug');
-        return response.data['is_favorite'] as bool;
-      } catch (_) {
-        // Fallback to local
-        return LocalStorage.isFavorite(slug);
-      }
-    } else {
-      return LocalStorage.isFavorite(slug);
-    }
+    return LocalStorage.isFavorite(slug);
   }
 
   Future<void> toggleFavorite(ComicDetailInfoModel comic, bool isFav) async {
-    final favData = {
-      'comic_slug': comic.slug,
-      'comic_name': comic.name,
-      'comic_thumb': comic.thumbUrl,
-    };
-
     if (isFav) {
-      // Add
-      if (_isLoggedIn) {
-        try {
-          await _dio.post('/favorites', data: favData);
-        } catch (_) {}
-      }
       await LocalStorage.insertFavorite({
         'slug': comic.slug,
         'name': comic.name,
@@ -100,12 +78,6 @@ class ComicRepository {
         'created_at': DateTime.now().toIso8601String(),
       });
     } else {
-      // Remove
-      if (_isLoggedIn) {
-        try {
-          await _dio.delete('/favorites/${comic.slug}');
-        } catch (_) {}
-      }
       await LocalStorage.deleteFavorite(comic.slug);
     }
   }
@@ -119,21 +91,6 @@ class ComicRepository {
     required String chapterName,
     required int progressPercent,
   }) async {
-    final histData = {
-      'comic_slug': comicSlug,
-      'comic_name': comicName,
-      'comic_thumb': comicThumb,
-      'chapter_slug': chapterSlug,
-      'chapter_name': chapterName,
-      'progress_percent': progressPercent,
-    };
-
-    if (_isLoggedIn) {
-      try {
-        await _dio.post('/history', data: histData);
-      } catch (_) {}
-    }
-
     await LocalStorage.saveHistory({
       'comic_slug': comicSlug,
       'comic_name': comicName,
@@ -146,15 +103,6 @@ class ComicRepository {
   }
 
   Future<Map<String, dynamic>?> getReadingHistory(String comicSlug) async {
-    if (_isLoggedIn) {
-      try {
-        final response = await _dio.get('/history/comic/$comicSlug');
-        return response.data as Map<String, dynamic>;
-      } catch (_) {
-        return LocalStorage.getComicHistory(comicSlug);
-      }
-    } else {
-      return LocalStorage.getComicHistory(comicSlug);
-    }
+    return LocalStorage.getComicHistory(comicSlug);
   }
 }

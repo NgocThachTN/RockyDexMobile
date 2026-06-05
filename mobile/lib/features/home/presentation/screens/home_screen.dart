@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../home_notifier.dart';
 import '../widgets/home_filter_section.dart';
 import '../widgets/comic_grid_card.dart';
+import '../widgets/home_banner_carousel.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -42,7 +44,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 28),
+            const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 28),
             const SizedBox(width: 8),
             const Text(
               'RockyDex',
@@ -91,6 +93,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (state.error != null && state.comics.isEmpty) {
       return Center(
         child: Padding(
@@ -125,15 +129,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
+        // Banner Carousel (only visible when not filtering by category and at page 1)
+        if (state.selectedCategorySlug.isEmpty && state.comics.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                HomeBannerCarousel(featuredComics: state.comics),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    state.selectedListType == ApiConstants.listFeatured
+                        ? 'Truyện Đề Xuất'
+                        : (state.selectedListType == ApiConstants.listNew
+                            ? 'Mới Cập Nhật'
+                            : (state.selectedListType == ApiConstants.listOngoing
+                                ? 'Đang Tiến Hành'
+                                : 'Đã Hoàn Thành')),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
+            ),
+          ),
+
         // 2x2 Grid Layout
         SliverPadding(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.61,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+              childAspectRatio: 0.55,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {
