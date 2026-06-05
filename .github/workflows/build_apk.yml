@@ -8,6 +8,8 @@ jobs:
   build:
     name: Build and Upload APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     defaults:
       run:
