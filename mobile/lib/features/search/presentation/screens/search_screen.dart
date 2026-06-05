@@ -167,124 +167,160 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       );
     }
 
-    return ListView.builder(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GridView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 0.61,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
       itemCount: state.results.length + (state.isLoadMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == state.results.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.0),
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 20.0),
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+            ),
           );
         }
 
         final comic = state.results[index];
-        return _buildSearchComicCard(comic);
+        return _buildSearchGridCard(context, comic, isDark);
       },
     );
   }
 
-  Widget _buildSearchComicCard(ComicModel comic) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => context.push('/comic/${comic.slug}'),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(10.0),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Comic Thumb
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: comic.thumbUrl,
-                  width: 80,
-                  height: 110,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: const Center(
-                      child: CircularProgressIndicator(strokeWidth: 2),
+  Widget _buildSearchGridCard(BuildContext context, ComicModel comic, bool isDark) {
+    return GestureDetector(
+      onTap: () => context.push('/comic/${comic.slug}'),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.18),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Cover Image block
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(11),
+                  topRight: Radius.circular(11),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CachedNetworkImage(
+                      imageUrl: comic.thumbUrl,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        color: isDark ? const Color(0xFF252525) : const Color(0xFFF0F0F0),
+                        child: const Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Container(
+                        color: isDark ? const Color(0xFF252525) : const Color(0xFFF0F0F0),
+                        child: const Icon(Icons.broken_image, size: 28),
+                      ),
                     ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    child: const Icon(Icons.broken_image),
-                  ),
+                    // Status Badge overlay
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: (comic.status == 'ongoing'
+                                  ? AppColors.primaryBlue
+                                  : AppColors.success)
+                              .withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          comic.status == 'ongoing' ? 'Đang ra' : 'Xong',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 14),
-              // Comic Meta
-              Expanded(
-                child: SizedBox(
-                  height: 110,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+
+            // Metadata content block
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    comic.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            comic.name,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                      // Latest Chapter Badge
+                      if (comic.chaptersLatest != null && comic.chaptersLatest!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBlue.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Ch. ${comic.chaptersLatest!.first.chapterName}',
                             style: const TextStyle(
-                              fontSize: 15,
+                              color: AppColors.primaryBlue,
+                              fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          if (comic.category.isNotEmpty)
-                            Text(
-                              comic.category.map((e) => e.name).join(', '),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium,
-                            ),
-                        ],
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: comic.status == 'ongoing'
-                                  ? AppColors.primaryBlue.withOpacity(0.15)
-                                  : AppColors.success.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              comic.status == 'ongoing' ? 'Đang ra' : 'Hoàn thành',
-                              style: TextStyle(
-                                color: comic.status == 'ongoing'
-                                    ? AppColors.primaryBlue
-                                    : AppColors.success,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                          if (comic.chaptersLatest != null && comic.chaptersLatest!.isNotEmpty)
-                            Text(
-                              'Ch. ${comic.chaptersLatest!.first.chapterName}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                        ],
+                        )
+                      else
+                        const SizedBox.shrink(),
+
+                      // Action button indicator
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: Colors.grey,
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
