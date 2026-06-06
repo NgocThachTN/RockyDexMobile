@@ -13,21 +13,30 @@ class UpdateService {
     // Only support Android auto-update
     if (!Platform.isAndroid) return;
 
+    debugPrint('UpdateService: Starting update check against: $_repoUrl');
     try {
       final dio = Dio();
       final response = await dio.get(_repoUrl);
       
-      if (response.statusCode != 200) return;
+      if (response.statusCode != 200) {
+        debugPrint('UpdateService: Failed to get latest release. HTTP Status: ${response.statusCode}');
+        return;
+      }
 
       final data = response.data as Map<String, dynamic>;
       final latestTag = data['tag_name'] as String? ?? '';
       final changelog = data['body'] as String? ?? '';
       
-      if (latestTag.isEmpty) return;
+      if (latestTag.isEmpty) {
+        debugPrint('UpdateService: Latest release tag name is empty');
+        return;
+      }
 
       // Get current app version
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
+
+      debugPrint('UpdateService: Current version = $currentVersion, Latest tag on GitHub = $latestTag');
 
       if (_isNewerVersion(currentVersion, latestTag)) {
         // Find APK asset
@@ -41,23 +50,32 @@ class UpdateService {
           }
         }
 
-        if (downloadUrl.isNotEmpty && context.mounted) {
-          context.push('/update', extra: {
-            'currentVersion': currentVersion,
-            'latestVersion': latestTag,
-            'downloadUrl': downloadUrl,
-            'changelog': changelog,
-          });
+        if (downloadUrl.isNotEmpty) {
+          debugPrint('UpdateService: Found newer version. Redirecting to UpdateScreen. Download URL: $downloadUrl');
+          if (context.mounted) {
+            context.push('/update', extra: {
+              'currentVersion': currentVersion,
+              'latestVersion': latestTag,
+              'downloadUrl': downloadUrl,
+              'changelog': changelog,
+            });
+          }
+        } else {
+          debugPrint('UpdateService: Newer version tag exists, but no APK asset found in the release');
         }
-      } else if (showNoUpdatePrompt && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ứng dụng đã ở phiên bản mới nhất!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+      } else {
+        debugPrint('UpdateService: App is up-to-date (Latest tag is not newer than current version)');
+        if (showNoUpdatePrompt && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ứng dụng đã ở phiên bản mới nhất!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
       }
     } catch (e) {
+      debugPrint('UpdateService: Exception during update check: $e');
       if (showNoUpdatePrompt && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -24,7 +25,7 @@ class UpdateScreen extends StatefulWidget {
   State<UpdateScreen> createState() => _UpdateScreenState();
 }
 
-class _UpdateScreenState extends State<UpdateScreen> {
+class _UpdateScreenState extends State<UpdateScreen> with WidgetsBindingObserver {
   static const _channel = MethodChannel('com.rockydex.mobile/install_permission');
 
   double _progress = 0.0;
@@ -35,9 +36,42 @@ class _UpdateScreenState extends State<UpdateScreen> {
   CancelToken? _cancelToken;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _cancelToken?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // If download is complete and we were showing permission error, retry installation
+      if (_isCompleted && _errorMessage != null && _errorMessage!.contains('quyền cài đặt')) {
+        _checkAndInstallOnResume();
+      }
+    }
+  }
+
+  Future<void> _checkAndInstallOnResume() async {
+    bool hasPermission = true;
+    try {
+      hasPermission = await _channel.invokeMethod<bool>('checkInstallPermission') ?? true;
+    } catch (e) {
+      // Fallback
+    }
+
+    if (hasPermission) {
+      setState(() {
+        _errorMessage = null;
+      });
+      await _triggerInstall();
+    }
   }
 
   Future<void> _startDownload() async {
@@ -48,8 +82,20 @@ class _UpdateScreenState extends State<UpdateScreen> {
     });
 
     try {
-      final tempDir = await getTemporaryDirectory();
-      _apkPath = '${tempDir.path}/rockydex_update.apk';
+      Directory? downloadDir;
+      if (Platform.isAndroid) {
+        // Use external storage directory so system installer has read permission
+        downloadDir = await getExternalStorageDirectory();
+      }
+      downloadDir ??= await getTemporaryDirectory();
+      _apkPath = '${downloadDir.path}/rockydex_update.apk';
+
+      // Delete existing file if any to prevent package installer corruption
+      final apkFile = File(_apkPath);
+      if (await apkFile.exists()) {
+        await apkFile.delete();
+      }
+
       _cancelToken = CancelToken();
 
       final dio = Dio();
