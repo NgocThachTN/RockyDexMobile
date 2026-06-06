@@ -452,14 +452,14 @@ class _UpdateScreenState extends State<UpdateScreen> with WidgetsBindingObserver
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   onPressed: _triggerInstall,
-                  icon: const Icon(Icons.install_mobile_rounded),
+                  icon: const Icon(Icons.install_mobile_rounded, size: 20),
                   label: const Text(
                     'CÀI ĐẶT CẬP NHẬT',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                   ),
                 ),
               ] else ...[
@@ -469,7 +469,7 @@ class _UpdateScreenState extends State<UpdateScreen> with WidgetsBindingObserver
                     Expanded(
                       child: OutlinedButton(
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
                           side: BorderSide(color: isDark ? AppColors.bgDarkDivider : AppColors.bgLightDivider),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
@@ -485,25 +485,26 @@ class _UpdateScreenState extends State<UpdateScreen> with WidgetsBindingObserver
                           style: TextStyle(
                             color: isDark ? Colors.white70 : Colors.black87,
                             fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryBlue,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 11),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         onPressed: _startDownload,
                         child: const Text(
-                          'CẬP NHẬT NGAY',
+                          'CẬP NHẬT',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 13,
                           ),
                         ),
                       ),

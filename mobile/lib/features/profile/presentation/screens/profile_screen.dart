@@ -34,61 +34,73 @@ class ProfileScreen extends ConsumerWidget {
         onRefresh: () => ref.refresh(readingStatsProvider.future),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // 1. Local Profile Card (No login required)
               _buildLocalProfileCard(context),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // 2. Reading Stats (Always shown)
               Text(
                 'Thống kê đọc truyện',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      fontSize: 14,
                     ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildStatsGrid(context, statsAsync),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // 3. Settings & Actions List
               Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(
+                    color: Theme.of(context).dividerColor.withOpacity(0.5),
+                  ),
+                ),
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.history, color: AppColors.primaryBlue),
-                      title: const Text('Lịch sử đọc truyện'),
-                      trailing: const Icon(Icons.chevron_right),
+                      dense: true,
+                      leading: const Icon(Icons.history, color: AppColors.primaryBlue, size: 20),
+                      title: const Text('Lịch sử đọc truyện', style: TextStyle(fontSize: 13)),
+                      trailing: const Icon(Icons.chevron_right, size: 16),
                       onTap: () => context.push('/history'),
                     ),
-                    const Divider(height: 1, indent: 56),
+                    const Divider(height: 1, indent: 48),
                     ListTile(
-                      leading: const Icon(Icons.bookmark_outline, color: AppColors.primaryBlue),
-                      title: const Text('Truyện yêu thích'),
-                      trailing: const Icon(Icons.chevron_right),
+                      dense: true,
+                      leading: const Icon(Icons.bookmark_outline, color: AppColors.primaryBlue, size: 20),
+                      title: const Text('Truyện yêu thích', style: TextStyle(fontSize: 13)),
+                      trailing: const Icon(Icons.chevron_right, size: 16),
                       onTap: () => context.push('/favorites'),
                     ),
-                    const Divider(height: 1, indent: 56),
+                    const Divider(height: 1, indent: 48),
                     ListTile(
-                      leading: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue),
-                      title: const Text('Cài đặt đọc truyện'),
-                      trailing: const Icon(Icons.chevron_right),
+                      dense: true,
+                      leading: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue, size: 20),
+                      title: const Text('Cài đặt đọc truyện', style: TextStyle(fontSize: 13)),
+                      trailing: const Icon(Icons.chevron_right, size: 16),
                       onTap: () => context.push('/settings'),
                     ),
-                    const Divider(height: 1, indent: 56),
+                    const Divider(height: 1, indent: 48),
                     ListTile(
-                      leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue),
-                      title: const Text('Về RockyDex'),
-                      subtitle: const Text('Phiên bản v1.0.5'),
+                      dense: true,
+                      leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue, size: 20),
+                      title: const Text('Về RockyDex', style: TextStyle(fontSize: 13)),
+                      subtitle: const Text('Phiên bản v1.0.8', style: TextStyle(fontSize: 11)),
                       onTap: () {
                         showAboutDialog(
                           context: context,
                           applicationName: 'RockyDex',
-                          applicationVersion: '1.0.5',
-                          applicationIcon: const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 40),
+                          applicationVersion: '1.0.8',
+                          applicationIcon: const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 36),
                           children: const [
                             Text('Ứng dụng đọc truyện tranh tối giản, nhanh chóng và mượt mà cho người dùng Việt Nam. Hợp phong thủy Xanh Dương - Xám. Dữ liệu lưu offline hoàn toàn.'),
                           ],
@@ -107,28 +119,35 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildLocalProfileCard(BuildContext context) {
     return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor.withOpacity(0.5),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
             CircleAvatar(
-              radius: 30,
-              backgroundColor: AppColors.primaryBlue.withOpacity(0.2),
-              child: const Icon(Icons.person, size: 36, color: AppColors.primaryBlue),
+              radius: 24,
+              backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
+              child: const Icon(Icons.person, size: 28, color: AppColors.primaryBlue),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Độc giả RockyDex',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
-                  SizedBox(height: 4),
+                  SizedBox(height: 2),
                   Text(
                     'Dữ liệu lưu offline trên thiết bị',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                    style: TextStyle(fontSize: 11, color: Colors.grey),
                   ),
                 ],
               ),
@@ -149,15 +168,15 @@ class ProfileScreen extends ConsumerWidget {
         return Row(
           children: [
             Expanded(child: _buildStatCard(context, 'Đã đọc', '$comicsRead', 'bộ truyện')),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
             Expanded(child: _buildStatCard(context, 'Yêu thích', '$favoritesCount', 'bộ truyện')),
-            const SizedBox(width: 12),
-            Expanded(child: _buildStatCard(context, 'Chương', '$chaptersRead', 'đã hoàn thành')),
+            const SizedBox(width: 8),
+            Expanded(child: _buildStatCard(context, 'Chương', '$chaptersRead', 'đã đọc')),
           ],
         );
       },
       loading: () => const SizedBox(
-        height: 80,
+        height: 60,
         child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue)),
       ),
       error: (_, __) => const SizedBox.shrink(),
@@ -166,23 +185,31 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildStatCard(BuildContext context, String title, String value, String unit) {
     return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: Theme.of(context).dividerColor.withOpacity(0.5),
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
         child: Column(
           children: [
             Text(
               title,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.grey),
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Colors.grey),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               value,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.primaryBlue),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlue),
             ),
             const SizedBox(height: 2),
             Text(
               unit,
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
+              style: const TextStyle(fontSize: 9, color: Colors.grey),
             ),
           ],
         ),

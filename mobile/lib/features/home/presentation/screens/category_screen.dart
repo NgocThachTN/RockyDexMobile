@@ -171,9 +171,9 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                   physics: const AlwaysScrollableScrollPhysics(),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 2.8,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+                    childAspectRatio: 3.2,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
                   ),
                   itemCount: filteredCategories.length,
                   itemBuilder: (context, index) {
@@ -185,9 +185,9 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                       margin: EdgeInsets.zero,
                       color: Theme.of(context).cardColor,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         side: BorderSide(
-                          color: Theme.of(context).dividerColor.withOpacity(0.5),
+                          color: Theme.of(context).dividerColor.withOpacity(0.4),
                           width: 1,
                         ),
                       ),
@@ -198,27 +198,27 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                             extra: cat.name,
                           );
                         },
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(8),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           child: Row(
                             children: [
                               // Accent indicator
                               Container(
                                 width: 5,
-                                height: 22,
+                                height: 18,
                                 decoration: BoxDecoration(
                                   color: color,
                                   borderRadius: BorderRadius.circular(2.5),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   cat.name,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 13,
+                                    fontSize: 12,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -226,7 +226,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                               ),
                               Icon(
                                 Icons.chevron_right_rounded,
-                                size: 16,
+                                size: 14,
                                 color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.3),
                               ),
                             ],
