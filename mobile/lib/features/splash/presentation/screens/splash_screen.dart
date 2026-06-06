@@ -47,8 +47,10 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.black, // A sleek dark background
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Uses app theme background
       body: Center(
         child: AnimatedBuilder(
           animation: _controller,
@@ -60,18 +62,18 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
-                      Icons.book_online,
-                      size: 100,
-                      color: Colors.deepOrange, // A vibrant primary color
+                    Image.asset(
+                      'assets/images/app_icon.png',
+                      width: 120,
+                      height: 120,
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'RockyDex',
                       style: TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Theme.of(context).primaryColor, // Uses primary brand color
                         letterSpacing: 2.0,
                       ),
                     ),
@@ -80,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                       'Thế giới Manga trong tầm tay',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey[400],
+                        color: isDark ? Colors.grey[400] : Colors.grey[700],
                         fontStyle: FontStyle.italic,
                       ),
                     ),
