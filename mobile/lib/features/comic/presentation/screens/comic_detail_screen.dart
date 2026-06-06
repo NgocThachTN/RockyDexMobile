@@ -17,8 +17,8 @@ class ComicDetailScreen extends ConsumerStatefulWidget {
 class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
   bool _isDescriptionExpanded = false;
   bool _isChapterAscending = false; // default descending
+  int _selectedServerIndex = 0;
 
-  @override
   @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(comicDetailProvider(widget.slug));
@@ -30,9 +30,10 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
     return Scaffold(
       body: detailAsync.when(
         data: (comic) {
+          final serverIndex = _selectedServerIndex.clamp(0, comic.chapters.isNotEmpty ? comic.chapters.length - 1 : 0);
           // Flatten chapters list
           final chaptersList = comic.chapters.isNotEmpty
-              ? comic.chapters.first.serverData
+              ? comic.chapters[serverIndex].serverData
               : <ChapterModel>[];
 
           final sortedChapters = _isChapterAscending
@@ -377,6 +378,61 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                           ],
                         ),
                       ),
+
+                      // Server selector
+                      if (comic.chapters.length > 1) ...[
+                        const SizedBox(height: 20),
+                        Text(
+                          'Nguồn / Dịch',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 38,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: comic.chapters.length,
+                            itemBuilder: (context, index) {
+                              final srv = comic.chapters[index];
+                              final isSelected = index == serverIndex;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: ChoiceChip(
+                                  showCheckmark: false,
+                                  label: Text(
+                                    srv.serverName,
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  selectedColor: AppColors.primaryBlue,
+                                  backgroundColor: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F3F5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    side: BorderSide(
+                                      color: isSelected
+                                          ? AppColors.primaryBlue
+                                          : (isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.18)),
+                                    ),
+                                  ),
+                                  onSelected: (selected) {
+                                    if (selected) {
+                                      setState(() {
+                                        _selectedServerIndex = index;
+                                      });
+                                    }
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
 
                       // Chapter List Header
                       const SizedBox(height: 24),

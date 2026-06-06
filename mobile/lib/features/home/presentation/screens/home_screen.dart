@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/services/update_service.dart';
+import '../../../../core/providers/server_source_provider.dart';
 import '../home_notifier.dart';
 import '../widgets/comic_grid_card.dart';
 import '../widgets/home_banner_carousel.dart';
@@ -68,6 +69,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
   Widget build(BuildContext context) {
     final state = ref.watch(homeProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeSource = ref.watch(serverSourceProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -75,26 +77,57 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
         elevation: 0,
         scrolledUnderElevation: 0,
         titleSpacing: 16,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 22),
-            const SizedBox(width: 8),
-            const Text(
-              'RockyDex',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-                letterSpacing: 0.2,
+        title: PopupMenuButton<ServerSource>(
+          offset: const Offset(0, 40),
+          position: PopupMenuPosition.under,
+          tooltip: 'Chọn nguồn truyện',
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (source) {
+            ref.read(serverSourceProvider.notifier).setSource(source);
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: ServerSource.otruyen,
+              child: Row(
+                children: [
+                  Icon(Icons.layers_outlined, size: 18, color: AppColors.primaryBlue),
+                  SizedBox(width: 8),
+                  Text('OTruyen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
               ),
             ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.keyboard_arrow_down,
-              size: 18,
-              color: isDark ? Colors.white60 : Colors.black54,
+            const PopupMenuItem(
+              value: ServerSource.mangadex,
+              child: Row(
+                children: [
+                  Icon(Icons.dns_outlined, size: 18, color: AppColors.primaryBlue),
+                  SizedBox(width: 8),
+                  Text('MangaDex', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
           ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                activeSource == ServerSource.otruyen ? 'RockyDex (OTruyen)' : 'RockyDex (MangaDex)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  letterSpacing: 0.1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.keyboard_arrow_down,
+                size: 18,
+                color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(

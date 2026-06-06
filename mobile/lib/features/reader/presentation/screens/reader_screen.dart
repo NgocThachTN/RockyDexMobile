@@ -361,9 +361,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 // Chapter Navigation (Prev / Next Buttons)
                 comicDetailAsync.when(
                   data: (comic) {
-                    final chaptersList = comic.chapters.isNotEmpty
-                        ? comic.chapters.first.serverData
-                        : <ChapterModel>[];
+                    ServerModel? matchedServer;
+                    for (final srv in comic.chapters) {
+                      if (srv.serverData.any((c) => c.chapterSlug == widget.chapterSlug)) {
+                        matchedServer = srv;
+                        break;
+                      }
+                    }
+                    final server = matchedServer ?? (comic.chapters.isNotEmpty ? comic.chapters.first : null);
+                    final chaptersList = server != null ? server.serverData : <ChapterModel>[];
                     final currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
                     
                     final hasPrev = currentIdx > 0;

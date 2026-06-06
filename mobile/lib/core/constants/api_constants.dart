@@ -9,6 +9,10 @@ class ApiConstants {
       'https://sv1.otruyencdn.com/v1/api/chapter';
   static const String otruyenImageBaseCdn = 'https://img.otruyenapi.com';
 
+  // MangaDex API Endpoints
+  static const String mangadexBaseUrl = 'https://api.mangadex.org';
+  static const String mangadexImageBaseCdn = 'https://uploads.mangadex.org/covers';
+
   // RockyDex Backend API Endpoints (Local development)
   // For android emulator, use 10.0.2.2 instead of localhost
   static const String rockydexBaseUrl = 'http://localhost:8080/api';
