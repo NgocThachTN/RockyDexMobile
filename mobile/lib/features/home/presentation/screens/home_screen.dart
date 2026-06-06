@@ -46,15 +46,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        toolbarHeight: 48,
         title: Row(
           children: [
-            const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 28),
+            const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 24),
             const SizedBox(width: 8),
             const Text(
               'RockyDex',
               style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                fontSize: 19,
                 letterSpacing: 0.5,
               ),
             ),
@@ -62,11 +63,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search, size: 22),
             onPressed: () => context.go('/search'),
           ),
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const Icon(Icons.settings, size: 22),
             onPressed: () => context.push('/settings'),
           ),
         ],
@@ -96,8 +97,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
       );
     }
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (state.error != null && state.comics.isEmpty) {
       return Center(

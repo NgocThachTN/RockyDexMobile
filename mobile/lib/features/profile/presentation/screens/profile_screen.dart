@@ -61,6 +61,20 @@ class ProfileScreen extends ConsumerWidget {
                 child: Column(
                   children: [
                     ListTile(
+                      leading: const Icon(Icons.history, color: AppColors.primaryBlue),
+                      title: const Text('Lịch sử đọc truyện'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/history'),
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    ListTile(
+                      leading: const Icon(Icons.bookmark_outline, color: AppColors.primaryBlue),
+                      title: const Text('Truyện yêu thích'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => context.push('/favorites'),
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    ListTile(
                       leading: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue),
                       title: const Text('Cài đặt đọc truyện'),
                       trailing: const Icon(Icons.chevron_right),
@@ -70,12 +84,12 @@ class ProfileScreen extends ConsumerWidget {
                     ListTile(
                       leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue),
                       title: const Text('Về RockyDex'),
-                      subtitle: const Text('Phiên bản 1.0.0'),
+                      subtitle: const Text('Phiên bản v1.0.4'),
                       onTap: () {
                         showAboutDialog(
                           context: context,
                           applicationName: 'RockyDex',
-                          applicationVersion: '1.0.0',
+                          applicationVersion: '1.0.4',
                           applicationIcon: const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 40),
                           children: const [
                             Text('Ứng dụng đọc truyện tranh tối giản, nhanh chóng và mượt mà cho người dùng Việt Nam. Hợp phong thủy Xanh Dương - Xám. Dữ liệu lưu offline hoàn toàn.'),

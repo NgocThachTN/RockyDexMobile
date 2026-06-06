@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// Import Screens (we will create them next)
+// Import Screens
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
-import '../../features/library/presentation/screens/library_screen.dart';
+import '../../features/home/presentation/screens/category_screen.dart';
+import '../../features/home/presentation/screens/category_detail_screen.dart';
+import '../../features/library/presentation/screens/favorites_screen.dart';
+import '../../features/library/presentation/screens/history_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/comic/presentation/screens/comic_detail_screen.dart';
 import '../../features/reader/presentation/screens/reader_screen.dart';
@@ -37,8 +40,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const SearchScreen(),
           ),
           GoRoute(
-            path: '/library',
-            builder: (context, state) => const LibraryScreen(),
+            path: '/categories',
+            builder: (context, state) => const CategoryScreen(),
           ),
           GoRoute(
             path: '/profile',
@@ -80,6 +83,25 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/categories/:slug',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) {
+          final slug = state.pathParameters['slug']!;
+          final name = state.extra as String? ?? slug;
+          return CategoryDetailScreen(categorySlug: slug, categoryName: name);
+        },
+      ),
+      GoRoute(
+        path: '/favorites',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const FavoritesScreen(),
+      ),
+      GoRoute(
+        path: '/history',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const HistoryScreen(),
+      ),
+      GoRoute(
         path: '/settings',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SettingsScreen(),
@@ -116,7 +138,7 @@ class NavigationShell extends StatelessWidget {
     int currentIndex = 0;
     if (location.startsWith('/search')) {
       currentIndex = 1;
-    } else if (location.startsWith('/library')) {
+    } else if (location.startsWith('/categories')) {
       currentIndex = 2;
     } else if (location.startsWith('/profile')) {
       currentIndex = 3;
@@ -136,7 +158,7 @@ class NavigationShell extends StatelessWidget {
               context.go('/search');
               break;
             case 2:
-              context.go('/library');
+              context.go('/categories');
               break;
             case 3:
               context.go('/profile');
@@ -155,9 +177,9 @@ class NavigationShell extends StatelessWidget {
             label: 'Tìm kiếm',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bookmark_outline),
-            activeIcon: Icon(Icons.bookmark),
-            label: 'Tủ sách',
+            icon: Icon(Icons.category_outlined),
+            activeIcon: Icon(Icons.category),
+            label: 'Thể loại',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

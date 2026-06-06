@@ -12,6 +12,11 @@ class SearchState {
   final bool hasMore;
   final String? error;
 
+  // Filters
+  final String selectedCountry; // 'all', 'china' (Trung Quốc), 'korea' (Hàn Quốc), 'japan' (Nhật Bản), 'vietnam' (Việt Nam)
+  final String selectedStatus;  // 'all', 'ongoing', 'completed'
+  final String selectedYear;    // 'all', '2026', '2025', '2024', '2023', '2022', '2021', 'before_2021'
+
   SearchState({
     this.query = '',
     this.history = const [],
@@ -21,7 +26,59 @@ class SearchState {
     this.page = 1,
     this.hasMore = true,
     this.error,
+    this.selectedCountry = 'all',
+    this.selectedStatus = 'all',
+    this.selectedYear = 'all',
   });
+
+  List<ComicModel> get filteredResults {
+    return results.where((comic) {
+      // 1. Filter by status
+      if (selectedStatus != 'all' && comic.status != selectedStatus) {
+        return false;
+      }
+
+      // 2. Filter by country
+      if (selectedCountry != 'all') {
+        final hasCountry = comic.category.any((cat) {
+          final slug = cat.slug.toLowerCase();
+          final name = cat.name.toLowerCase();
+          if (selectedCountry == 'china') {
+            return slug == 'trung-quoc' || slug == 'manhua' || name.contains('trung quốc');
+          } else if (selectedCountry == 'korea') {
+            return slug == 'han-quoc' || slug == 'manhwa' || name.contains('hàn quốc');
+          } else if (selectedCountry == 'japan') {
+            return slug == 'nhat-ban' || slug == 'manga' || name.contains('nhật bản');
+          } else if (selectedCountry == 'vietnam') {
+            return slug == 'viet-nam' || name.contains('việt nam');
+          }
+          return false;
+        });
+        if (!hasCountry) return false;
+      }
+
+      // 3. Filter by year
+      if (selectedYear != 'all') {
+        final hasYear = comic.category.any((cat) {
+          final slug = cat.slug.toLowerCase();
+          final name = cat.name.toLowerCase();
+          if (selectedYear == 'before_2021') {
+            // Match any 4 digit year
+            final yearMatch = RegExp(r'20\d{2}').firstMatch(slug);
+            if (yearMatch != null) {
+              final year = int.tryParse(yearMatch.group(0)!);
+              if (year != null && year < 2021) return true;
+            }
+            return name.contains('trước 2021') || name.contains('2020') || name.contains('2019') || name.contains('2018');
+          }
+          return slug == selectedYear || name.contains(selectedYear);
+        });
+        if (!hasYear) return false;
+      }
+
+      return true;
+    }).toList();
+  }
 
   SearchState copyWith({
     String? query,
@@ -32,6 +89,9 @@ class SearchState {
     int? page,
     bool? hasMore,
     String? error,
+    String? selectedCountry,
+    String? selectedStatus,
+    String? selectedYear,
   }) {
     return SearchState(
       query: query ?? this.query,
@@ -42,6 +102,9 @@ class SearchState {
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       error: error,
+      selectedCountry: selectedCountry ?? this.selectedCountry,
+      selectedStatus: selectedStatus ?? this.selectedStatus,
+      selectedYear: selectedYear ?? this.selectedYear,
     );
   }
 }
@@ -62,22 +125,24 @@ class SearchNotifier extends StateNotifier<SearchState> {
     state = state.copyWith(history: _repository.getSearchHistory());
   }
 
-  Future<void> search(String query) async {
+  Future<void> search(String query, {bool saveToHistory = false}) async {
     if (query.trim().isEmpty) {
       state = state.copyWith(query: '', results: []);
       return;
     }
 
     state = state.copyWith(query: query, isLoading: true, results: [], page: 1, hasMore: true, error: null);
-    await _repository.addSearchHistory(query);
-    _loadHistory();
+    if (saveToHistory) {
+      await _repository.addSearchHistory(query);
+      _loadHistory();
+    }
 
     try {
       final list = await _repository.searchComics(query, page: 1);
       state = state.copyWith(
         isLoading: false,
         results: list,
-        hasMore: list.length >= 20, // OTruyen API standard page size is 24/20
+        hasMore: list.length >= 20, // OTruyen API standard page size is 20/24
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
@@ -110,5 +175,25 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
   void setQuery(String query) {
     state = state.copyWith(query: query);
+  }
+
+  void updateCountry(String country) {
+    state = state.copyWith(selectedCountry: country);
+  }
+
+  void updateStatus(String status) {
+    state = state.copyWith(selectedStatus: status);
+  }
+
+  void updateYear(String year) {
+    state = state.copyWith(selectedYear: year);
+  }
+
+  void resetFilters() {
+    state = state.copyWith(
+      selectedCountry: 'all',
+      selectedStatus: 'all',
+      selectedYear: 'all',
+    );
   }
 }

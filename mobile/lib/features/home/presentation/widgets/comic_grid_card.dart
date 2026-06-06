@@ -47,11 +47,9 @@ class ComicGridCard extends StatelessWidget {
                     CachedNetworkImage(
                       imageUrl: comic.thumbUrl,
                       fit: BoxFit.cover,
+                      fadeInDuration: const Duration(milliseconds: 250),
                       placeholder: (context, url) => Container(
                         color: isDark ? const Color(0xFF252525) : const Color(0xFFF0F0F0),
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
                       ),
                       errorWidget: (context, url, error) => Container(
                         color: isDark ? const Color(0xFF252525) : const Color(0xFFF0F0F0),

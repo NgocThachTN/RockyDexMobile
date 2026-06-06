@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -33,12 +34,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   int _currentPage = 1;
   int _totalPages = 1;
   late final ScrollController _scrollController;
+  late final PageController _pageController;
+  bool _imagesPrecached = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _pageController = PageController();
 
     // Enter fullscreen mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -49,6 +53,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     // Exit fullscreen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -72,14 +77,48 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     }
   }
 
+  Future<void> _precacheAllImages(List<String> urls) async {
+    if (!mounted) return;
+    // Precache first 3 pages immediately
+    for (int i = 0; i < urls.length && i < 3; i++) {
+      if (!mounted) return;
+      precacheImage(CachedNetworkImageProvider(urls[i]), context);
+    }
+    // Precache the rest sequentially with a 250ms delay to prevent network congestion
+    for (int i = 3; i < urls.length; i++) {
+      if (!mounted) return;
+      await Future.delayed(const Duration(milliseconds: 250));
+      if (!mounted) return;
+      precacheImage(CachedNetworkImageProvider(urls[i]), context);
+    }
+  }
+
   void _saveReadingProgress(int progressPercent) {
+    final apiDataUrl = widget.apiDataUrl ?? '';
+    final chapterState = ref.read(readerChapterDetailProvider(apiDataUrl));
+    final comicDetailState = ref.read(comicDetailProvider(widget.comicSlug));
+
+    String comicName = widget.comicSlug.replaceAll('-', ' ');
+    String chapterName = widget.chapterSlug.replaceAll('chap-', '');
+    String comicThumb = '';
+
+    if (chapterState.hasValue) {
+      final chapter = chapterState.value!;
+      comicName = chapter.item.comicName;
+      chapterName = chapter.item.chapterName;
+    }
+
+    if (comicDetailState.hasValue) {
+      comicThumb = comicDetailState.value!.thumbUrl;
+    }
+
     // Save to repositories (local & remote)
     ref.read(comicRepositoryProvider).saveHistory(
           comicSlug: widget.comicSlug,
-          comicName: widget.comicSlug.replaceAll('-', ' '), // approximate name
-          comicThumb: '', // we can omit or sync from details
+          comicName: comicName,
+          comicThumb: comicThumb,
           chapterSlug: widget.chapterSlug,
-          chapterName: widget.chapterSlug.replaceAll('chap-', ''),
+          chapterName: chapterName,
           progressPercent: progressPercent,
         );
   }
@@ -105,7 +144,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         children: [
           // 1. Pages Viewer
           GestureDetector(
-            onTap: _toggleUI,
+            onTap: settings.layout == 'horizontal' ? null : _toggleUI, // Taps are handled by overlay in horizontal layout
             child: chapterAsync.when(
               data: (chapter) {
                 final pages = chapter.item.chapterImage;
@@ -116,6 +155,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
                 // Build absolute image URLs
                 final imageUrls = pages.map((page) => '$cdn/$path/${page.imageFile}').toList();
+
+                // Precache images if not done yet
+                if (!_imagesPrecached) {
+                  _imagesPrecached = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _precacheAllImages(imageUrls);
+                  });
+                }
 
                 if (settings.layout == 'horizontal') {
                   return _buildHorizontalGallery(imageUrls);
@@ -142,6 +189,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             ),
           ),
 
+          // 1.5. Transparent Tap Areas for Horizontal Navigation
+          if (settings.layout == 'horizontal' && chapterAsync.hasValue)
+            ..._buildHorizontalTapOverlay(context),
+
           // 2. Brightness Overlay
           IgnorePointer(
             child: Container(
@@ -157,6 +208,59 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         ],
       ),
     );
+  }
+
+  List<Widget> _buildHorizontalTapOverlay(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    return [
+      // Left tap area (25%)
+      Positioned(
+        left: 0,
+        top: 0,
+        bottom: 0,
+        width: width * 0.25,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            if (_currentPage > 1) {
+              _pageController.previousPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          },
+        ),
+      ),
+      // Right tap area (25%)
+      Positioned(
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: width * 0.25,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () {
+            if (_currentPage < _totalPages) {
+              _pageController.nextPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          },
+        ),
+      ),
+      // Center tap area (50%)
+      Positioned(
+        left: width * 0.25,
+        right: width * 0.25,
+        top: 0,
+        bottom: 0,
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: _toggleUI,
+        ),
+      ),
+    ];
   }
 
   Widget _buildVerticalScroll(List<String> urls) {
@@ -191,6 +295,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   Widget _buildHorizontalGallery(List<String> urls) {
     return PhotoViewGallery.builder(
       scrollPhysics: const BouncingScrollPhysics(),
+      pageController: _pageController,
       builder: (BuildContext context, int index) {
         return PhotoViewGalleryPageOptions(
           imageProvider: CachedNetworkImageProvider(urls[index]),
@@ -223,24 +328,29 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       top: 0,
       left: 0,
       right: 0,
-      child: Container(
-        padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8, bottom: 12),
-        color: Colors.black.withOpacity(0.85),
-        child: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => context.pop(),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8, bottom: 12),
+            color: Colors.black.withOpacity(0.6),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => context.pop(),
+                ),
+                Expanded(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -255,131 +365,136 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       bottom: 0,
       left: 0,
       right: 0,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        color: Colors.black.withOpacity(0.85),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Chapter Navigation (Prev / Next Buttons)
-            comicDetailAsync.when(
-              data: (comic) {
-                final chaptersList = comic.chapters.isNotEmpty
-                    ? comic.chapters.first.serverData
-                    : <ChapterModel>[];
-                final currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
-                
-                final hasPrev = currentIdx > 0;
-                final hasNext = currentIdx != -1 && currentIdx < chaptersList.length - 1;
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Row(
-                    children: [
-                      // Prev Chapter Button
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: hasPrev
-                              ? () {
-                                  final prevChap = chaptersList[currentIdx - 1];
-                                  context.pushReplacement(
-                                    '/reader/${widget.comicSlug}/${prevChap.chapterSlug}',
-                                    extra: prevChap.chapterApiData,
-                                  );
-                                }
-                              : null,
-                          icon: Icon(Icons.navigate_before, color: hasPrev ? Colors.white : Colors.white24, size: 20),
-                          label: Text(
-                            'Chương trước',
-                            style: TextStyle(
-                              color: hasPrev ? Colors.white : Colors.white24,
-                              fontSize: 12,
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: hasPrev ? Colors.white38 : Colors.white12),
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      // Next Chapter Button
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: hasNext
-                              ? () {
-                                  final nextChap = chaptersList[currentIdx + 1];
-                                  context.pushReplacement(
-                                    '/reader/${widget.comicSlug}/${nextChap.chapterSlug}',
-                                    extra: nextChap.chapterApiData,
-                                  );
-                                }
-                              : null,
-                          icon: Icon(Icons.navigate_next, color: hasNext ? Colors.white : Colors.white38, size: 20),
-                          label: Text(
-                            'Chương sau',
-                            style: TextStyle(
-                              color: hasNext ? Colors.white : Colors.white38,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: hasNext ? AppColors.primaryBlue : Colors.white12,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
-
-            // Page Indicator
-            Text(
-              'Trang $_currentPage / $_totalPages',
-              style: const TextStyle(color: Colors.white70, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-
-            // Layout & Brightness controls
-            Row(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            color: Colors.black.withOpacity(0.6),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Layout selector icon
-                IconButton(
-                  icon: Icon(
-                    settings.layout == 'vertical' ? Icons.splitscreen : Icons.menu_book,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    final nextLayout = settings.layout == 'vertical' ? 'horizontal' : 'vertical';
-                    ref.read(readerSettingsProvider.notifier).updateLayout(nextLayout);
-                  },
-                ),
-                const SizedBox(width: 8),
+                // Chapter Navigation (Prev / Next Buttons)
+                comicDetailAsync.when(
+                  data: (comic) {
+                    final chaptersList = comic.chapters.isNotEmpty
+                        ? comic.chapters.first.serverData
+                        : <ChapterModel>[];
+                    final currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
+                    
+                    final hasPrev = currentIdx > 0;
+                    final hasNext = currentIdx != -1 && currentIdx < chaptersList.length - 1;
 
-                // Brightness Slider
-                const Icon(Icons.brightness_medium, color: Colors.white54, size: 18),
-                Expanded(
-                  child: Slider(
-                    value: settings.brightness,
-                    min: 0.1,
-                    max: 1.0,
-                    activeColor: AppColors.primaryBlue,
-                    inactiveColor: Colors.white24,
-                    onChanged: (val) {
-                      ref.read(readerSettingsProvider.notifier).updateBrightness(val);
-                    },
-                  ),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Row(
+                        children: [
+                          // Prev Chapter Button
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: hasPrev
+                                  ? () {
+                                      final prevChap = chaptersList[currentIdx - 1];
+                                      context.pushReplacement(
+                                        '/reader/${widget.comicSlug}/${prevChap.chapterSlug}',
+                                        extra: prevChap.chapterApiData,
+                                      );
+                                    }
+                                  : null,
+                              icon: Icon(Icons.navigate_before, color: hasPrev ? Colors.white : Colors.white24, size: 20),
+                              label: Text(
+                                'Chương trước',
+                                style: TextStyle(
+                                  color: hasPrev ? Colors.white : Colors.white24,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(color: hasPrev ? Colors.white38 : Colors.white12),
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Next Chapter Button
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: hasNext
+                                  ? () {
+                                      final nextChap = chaptersList[currentIdx + 1];
+                                      context.pushReplacement(
+                                        '/reader/${widget.comicSlug}/${nextChap.chapterSlug}',
+                                        extra: nextChap.chapterApiData,
+                                      );
+                                    }
+                                  : null,
+                              icon: Icon(Icons.navigate_next, color: hasNext ? Colors.white : Colors.white38, size: 20),
+                              label: Text(
+                                'Chương sau',
+                                style: TextStyle(
+                                  color: hasNext ? Colors.white : Colors.white38,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: hasNext ? AppColors.primaryBlue : Colors.white12,
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+
+                // Page Indicator
+                Text(
+                  'Trang $_currentPage / $_totalPages',
+                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+                const SizedBox(height: 12),
+
+                // Layout & Brightness controls
+                Row(
+                  children: [
+                    // Layout selector icon
+                    IconButton(
+                      icon: Icon(
+                        settings.layout == 'vertical' ? Icons.splitscreen : Icons.menu_book,
+                        color: Colors.white,
+                      ),
+                      onPressed: () {
+                        final nextLayout = settings.layout == 'vertical' ? 'horizontal' : 'vertical';
+                        ref.read(readerSettingsProvider.notifier).updateLayout(nextLayout);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Brightness Slider
+                    const Icon(Icons.brightness_medium, color: Colors.white54, size: 18),
+                    Expanded(
+                      child: Slider(
+                        value: settings.brightness,
+                        min: 0.1,
+                        max: 1.0,
+                        activeColor: AppColors.primaryBlue,
+                        inactiveColor: Colors.white24,
+                        onChanged: (val) {
+                          ref.read(readerSettingsProvider.notifier).updateBrightness(val);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );
