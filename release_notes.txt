@@ -1,0 +1,7 @@
+﻿Cập nhật v1.0.5:
+- Nâng cấp phiên bản hệ thống lên v1.0.5 để tạo bản phát hành mới.
+- Chuẩn hóa các bộ lọc và nhãn trạng thái theo đúng API của OTruyen (Đang phát hành, Hoàn thành, Sắp ra mắt, Truyện mới).
+- Thêm phân trang và giới hạn hiển thị 20 truyện mỗi trang ở tất cả danh sách (Home, Thể loại, Tìm kiếm) đúng tài liệu của API.
+- Tích hợp bộ lọc Trạng thái và Năm phát hành vào trang chi tiết Thể loại tiện lợi.
+- Thiết kế lại trang chủ với thanh TabBar 3 mục (Mới cập nhật, Truyện mới, Theo dõi) và giao diện gọn gàng.
+- Sửa lỗi quyền cài đặt ứng dụng cập nhật (REQUEST_INSTALL_PACKAGES) mượt mà trên Android.
