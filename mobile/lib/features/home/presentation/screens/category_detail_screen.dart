@@ -42,6 +42,7 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
   void _showFilterPicker(BuildContext context, CategoryComicsState state) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
@@ -55,120 +56,133 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
             final notifier = ref.read(categoryComicsProvider(widget.categorySlug).notifier);
 
             final statuses = [
-              {'name': 'Tất cả trạng thái', 'value': 'all'},
+              {'name': 'Tất cả', 'value': 'all'},
               {'name': 'Đang phát hành', 'value': 'ongoing'},
               {'name': 'Hoàn thành', 'value': 'completed'},
               {'name': 'Sắp ra mắt', 'value': 'coming_soon'},
             ];
 
             final years = [
-              {'name': 'Tất cả năm', 'value': 'all'},
-              {'name': 'Năm 2026', 'value': '2026'},
-              {'name': 'Năm 2025', 'value': '2025'},
-              {'name': 'Năm 2024', 'value': '2024'},
-              {'name': 'Năm 2023', 'value': '2023'},
-              {'name': 'Năm 2022', 'value': '2022'},
-              {'name': 'Năm 2021', 'value': '2021'},
+              {'name': 'Tất cả', 'value': 'all'},
+              {'name': '2026', 'value': '2026'},
+              {'name': '2025', 'value': '2025'},
+              {'name': '2024', 'value': '2024'},
+              {'name': '2023', 'value': '2023'},
+              {'name': '2022', 'value': '2022'},
+              {'name': '2021', 'value': '2021'},
               {'name': 'Trước 2021', 'value': 'before_2021'},
             ];
 
-            return Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Bộ Lọc Truyện',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          notifier.resetFilters();
-                          setModalState(() {});
-                          setState(() {});
-                        },
-                        child: const Text('Đặt lại', style: TextStyle(color: AppColors.error)),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  const SizedBox(height: 12),
-
-                  // Status Section
-                  const Text(
-                    'Trạng thái',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: statuses.map((status) {
-                      final isSelected = state.selectedStatus == status['value'];
-                      return ChoiceChip(
-                        label: Text(status['name']!),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          notifier.updateStatus(status['value']!);
-                          setModalState(() {});
-                          setState(() {});
-                        },
-                        selectedColor: AppColors.primaryBlue.withOpacity(0.15),
-                        labelStyle: TextStyle(
-                          color: isSelected ? AppColors.primaryBlue : (isDark ? Colors.white70 : Colors.black87),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            return SafeArea(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.75,
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Bộ Lọc Truyện',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Year Section
-                  const Text(
-                    'Năm phát hành',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: years.map((year) {
-                      final isSelected = state.selectedYear == year['value'];
-                      return ChoiceChip(
-                        label: Text(year['name']!),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          notifier.updateYear(year['value']!);
-                          setModalState(() {});
-                          setState(() {});
-                        },
-                        selectedColor: AppColors.primaryBlue.withOpacity(0.15),
-                        labelStyle: TextStyle(
-                          color: isSelected ? AppColors.primaryBlue : (isDark ? Colors.white70 : Colors.black87),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        TextButton(
+                          onPressed: () {
+                            notifier.resetFilters();
+                            setModalState(() {});
+                            setState(() {});
+                          },
+                          child: const Text('Đặt lại', style: TextStyle(color: AppColors.error)),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ],
                     ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text('ÁP DỤNG', style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ],
+                    const Divider(height: 1),
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Status Section
+                            const Text(
+                              'Trạng thái',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: statuses.map((status) {
+                                final isSelected = state.selectedStatus == status['value'];
+                                return ChoiceChip(
+                                  label: Text(status['name']!),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    notifier.updateStatus(status['value']!);
+                                    setModalState(() {});
+                                    setState(() {});
+                                  },
+                                  selectedColor: AppColors.primaryBlue.withOpacity(0.15),
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? AppColors.primaryBlue : (isDark ? Colors.white70 : Colors.black87),
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // Year Section
+                            const Text(
+                              'Năm phát hành',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: years.map((year) {
+                                final isSelected = state.selectedYear == year['value'];
+                                return ChoiceChip(
+                                  label: Text(year['name']!),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    notifier.updateYear(year['value']!);
+                                    setModalState(() {});
+                                    setState(() {});
+                                  },
+                                  selectedColor: AppColors.primaryBlue.withOpacity(0.15),
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? AppColors.primaryBlue : (isDark ? Colors.white70 : Colors.black87),
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(height: 24),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: const Text('ÁP DỤNG', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ),
             );
           },
