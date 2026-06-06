@@ -11,6 +11,7 @@ class SearchState {
   final int page;
   final bool hasMore;
   final String? error;
+  final int targetFilteredCount;
 
   // Filters
   final String selectedCountry; // 'all', 'china' (Trung Quốc), 'korea' (Hàn Quốc), 'japan' (Nhật Bản), 'vietnam' (Việt Nam)
@@ -26,6 +27,7 @@ class SearchState {
     this.page = 1,
     this.hasMore = true,
     this.error,
+    this.targetFilteredCount = 20,
     this.selectedCountry = 'all',
     this.selectedStatus = 'all',
     this.selectedYear = 'all',
@@ -90,6 +92,7 @@ class SearchState {
     int? page,
     bool? hasMore,
     String? error,
+    int? targetFilteredCount,
     String? selectedCountry,
     String? selectedStatus,
     String? selectedYear,
@@ -103,6 +106,7 @@ class SearchState {
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       error: error,
+      targetFilteredCount: targetFilteredCount ?? this.targetFilteredCount,
       selectedCountry: selectedCountry ?? this.selectedCountry,
       selectedStatus: selectedStatus ?? this.selectedStatus,
       selectedYear: selectedYear ?? this.selectedYear,
@@ -132,7 +136,15 @@ class SearchNotifier extends StateNotifier<SearchState> {
       return;
     }
 
-    state = state.copyWith(query: query, isLoading: true, results: [], page: 1, hasMore: true, error: null);
+    state = state.copyWith(
+      query: query,
+      isLoading: true,
+      results: [],
+      page: 1,
+      hasMore: true,
+      error: null,
+      targetFilteredCount: 20,
+    );
     if (saveToHistory) {
       await _repository.addSearchHistory(query);
       _loadHistory();
@@ -145,6 +157,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         results: list,
         hasMore: list.length >= 20, // OTruyen API standard page size is 20/24
       );
+      _checkAndLoadMore();
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
     }
@@ -153,7 +166,11 @@ class SearchNotifier extends StateNotifier<SearchState> {
   Future<void> loadMore() async {
     if (state.isLoading || state.isLoadMore || !state.hasMore || state.query.isEmpty) return;
 
-    state = state.copyWith(isLoadMore: true);
+    final newTarget = state.filteredResults.length < state.targetFilteredCount ? state.targetFilteredCount : state.targetFilteredCount + 20;
+    state = state.copyWith(
+      isLoadMore: true,
+      targetFilteredCount: newTarget,
+    );
     final nextPage = state.page + 1;
 
     try {
@@ -164,8 +181,16 @@ class SearchNotifier extends StateNotifier<SearchState> {
         page: nextPage,
         hasMore: list.isNotEmpty,
       );
+      _checkAndLoadMore();
     } catch (e) {
       state = state.copyWith(isLoadMore: false);
+    }
+  }
+
+  void _checkAndLoadMore() {
+    if (state.isLoading || state.isLoadMore || !state.hasMore || state.query.isEmpty) return;
+    if (state.filteredResults.length < state.targetFilteredCount) {
+      loadMore();
     }
   }
 
@@ -179,15 +204,18 @@ class SearchNotifier extends StateNotifier<SearchState> {
   }
 
   void updateCountry(String country) {
-    state = state.copyWith(selectedCountry: country);
+    state = state.copyWith(selectedCountry: country, targetFilteredCount: 20);
+    _checkAndLoadMore();
   }
 
   void updateStatus(String status) {
-    state = state.copyWith(selectedStatus: status);
+    state = state.copyWith(selectedStatus: status, targetFilteredCount: 20);
+    _checkAndLoadMore();
   }
 
   void updateYear(String year) {
-    state = state.copyWith(selectedYear: year);
+    state = state.copyWith(selectedYear: year, targetFilteredCount: 20);
+    _checkAndLoadMore();
   }
 
   void resetFilters() {
@@ -195,6 +223,8 @@ class SearchNotifier extends StateNotifier<SearchState> {
       selectedCountry: 'all',
       selectedStatus: 'all',
       selectedYear: 'all',
+      targetFilteredCount: 20,
     );
+    _checkAndLoadMore();
   }
 }

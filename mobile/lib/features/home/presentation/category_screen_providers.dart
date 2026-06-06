@@ -9,6 +9,7 @@ class CategoryComicsState {
   final int page;
   final bool hasMore;
   final String? error;
+  final int targetFilteredCount;
 
   // Filters
   final String selectedStatus;  // 'all', 'ongoing', 'completed'
@@ -21,6 +22,7 @@ class CategoryComicsState {
     this.page = 1,
     this.hasMore = true,
     this.error,
+    this.targetFilteredCount = 20,
     this.selectedStatus = 'all',
     this.selectedYear = 'all',
   });
@@ -63,6 +65,7 @@ class CategoryComicsState {
     int? page,
     bool? hasMore,
     String? error,
+    int? targetFilteredCount,
     String? selectedStatus,
     String? selectedYear,
   }) {
@@ -73,6 +76,7 @@ class CategoryComicsState {
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       error: error,
+      targetFilteredCount: targetFilteredCount ?? this.targetFilteredCount,
       selectedStatus: selectedStatus ?? this.selectedStatus,
       selectedYear: selectedYear ?? this.selectedYear,
     );
@@ -84,7 +88,7 @@ class CategoryComicsNotifier extends StateNotifier<CategoryComicsState> {
   final String _categorySlug;
 
   CategoryComicsNotifier(this._repository, this._categorySlug) : super(CategoryComicsState()) {
-    loadComics();
+    loadComics(reset: true);
   }
 
   Future<void> loadComics({bool reset = false}) async {
@@ -92,10 +96,21 @@ class CategoryComicsNotifier extends StateNotifier<CategoryComicsState> {
     if (!reset && !state.hasMore) return;
 
     final targetPage = reset ? 1 : state.page + 1;
+    final newTarget = reset ? 20 : (state.filteredComics.length < state.targetFilteredCount ? state.targetFilteredCount : state.targetFilteredCount + 20);
+
     if (reset) {
-      state = state.copyWith(isLoading: true, error: null, page: 1, hasMore: true);
+      state = state.copyWith(
+        isLoading: true,
+        error: null,
+        page: 1,
+        hasMore: true,
+        targetFilteredCount: 20,
+      );
     } else {
-      state = state.copyWith(isLoadMore: true);
+      state = state.copyWith(
+        isLoadMore: true,
+        targetFilteredCount: newTarget,
+      );
     }
 
     try {
@@ -107,6 +122,7 @@ class CategoryComicsNotifier extends StateNotifier<CategoryComicsState> {
         page: targetPage,
         hasMore: list.isNotEmpty,
       );
+      _checkAndLoadMore();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -116,19 +132,30 @@ class CategoryComicsNotifier extends StateNotifier<CategoryComicsState> {
     }
   }
 
+  void _checkAndLoadMore() {
+    if (state.isLoading || state.isLoadMore || !state.hasMore) return;
+    if (state.filteredComics.length < state.targetFilteredCount) {
+      loadComics();
+    }
+  }
+
   void updateStatus(String status) {
-    state = state.copyWith(selectedStatus: status);
+    state = state.copyWith(selectedStatus: status, targetFilteredCount: 20);
+    _checkAndLoadMore();
   }
 
   void updateYear(String year) {
-    state = state.copyWith(selectedYear: year);
+    state = state.copyWith(selectedYear: year, targetFilteredCount: 20);
+    _checkAndLoadMore();
   }
 
   void resetFilters() {
     state = state.copyWith(
       selectedStatus: 'all',
       selectedYear: 'all',
+      targetFilteredCount: 20,
     );
+    _checkAndLoadMore();
   }
 }
 
