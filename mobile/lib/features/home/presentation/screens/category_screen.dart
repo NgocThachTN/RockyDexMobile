@@ -120,42 +120,53 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                 width: 1,
               ),
             ),
-            child: TextField(
-              controller: _searchController,
-              textAlignVertical: TextAlignVertical.center,
-              style: const TextStyle(fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'Tìm nhanh thể loại...',
-                hintStyle: TextStyle(
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
-                  fontSize: 14,
+            child: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 12, right: 8),
+                  child: Icon(
+                    Icons.search_rounded,
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                    size: 20,
+                  ),
                 ),
-                prefixIcon: Icon(
-                  Icons.search_rounded,
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                  size: 20,
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    textAlignVertical: TextAlignVertical.center,
+                    style: const TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Tìm nhanh thể loại...',
+                      hintStyle: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                        fontSize: 14,
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val.trim().toLowerCase();
+                      });
+                    },
+                  ),
                 ),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, size: 18),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val.trim().toLowerCase();
-                });
-              },
+                if (_searchController.text.isNotEmpty) ...[
+                  IconButton(
+                    icon: const Icon(Icons.clear_rounded, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        _searchQuery = '';
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 10),
+                ],
+              ],
             ),
           ),
         ),
