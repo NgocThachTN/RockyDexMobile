@@ -1,7 +1,6 @@
 :root {
   --bg-main: #0f172a;      /* Slate 900 */
   --bg-card: #1e293b;      /* Slate 800 */
-  --bg-input: #0f172a;
   --border-color: #334155; /* Slate 700 */
   --text-primary: #f8fafc; /* Slate 50 */
   --text-secondary: #94a3b8; /* Slate 400 */
@@ -42,49 +41,50 @@ body {
 
 /* Container */
 .container {
-  max-width: 800px;
+  max-width: 1050px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 60px 24px;
   width: 100%;
 }
 
-/* Typography */
-h1 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  letter-spacing: -0.025em;
-  margin-bottom: 8px;
+@media (max-width: 800px) {
+  .container {
+    padding: 32px 16px;
+  }
 }
 
-h2 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 16px;
+/* Two-column layout */
+.main-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 48px;
+  align-items: start;
 }
 
-p {
-  color: var(--text-secondary);
+@media (max-width: 850px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
 }
 
-a {
-  color: var(--primary-blue);
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-a:hover {
-  color: var(--primary-hover);
-}
-
-/* Header Section */
-.header-section {
-  text-align: center;
-  margin-bottom: 48px;
+/* Left Panel (Sticky App info) */
+.left-panel {
+  position: sticky;
+  top: 40px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  text-align: left;
+}
+
+@media (max-width: 850px) {
+  .left-panel {
+    position: static;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 16px;
+  }
 }
 
 .app-logo {
@@ -97,24 +97,45 @@ a:hover {
   border: 2px solid var(--border-color);
 }
 
+h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 850px) {
+  h1 {
+    font-size: 2.2rem;
+  }
+}
+
 .tagline {
-  font-size: 1.125rem;
+  font-size: 1rem;
   color: var(--text-secondary);
-  max-width: 480px;
-  margin: 0 auto 16px;
+  margin-bottom: 20px;
+  max-width: 100%;
+}
+
+@media (max-width: 850px) {
+  .tagline {
+    max-width: 480px;
+  }
 }
 
 .version-badge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background-color: var(--border-color);
-  padding: 6px 16px;
+  background-color: var(--bg-card);
+  padding: 6px 14px;
   border-radius: 20px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: var(--text-primary);
   border: 1px solid var(--border-color);
+  margin-bottom: 24px;
 }
 
 .pulse-dot {
@@ -124,11 +145,18 @@ a:hover {
   border-radius: 50%;
 }
 
-/* Action Button */
+/* Action Buttons */
 .download-action {
-  margin: 32px 0 16px;
   width: 100%;
-  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 850px) {
+  .download-action {
+    max-width: 320px;
+  }
 }
 
 .btn-primary {
@@ -139,14 +167,14 @@ a:hover {
   background-color: var(--primary-blue);
   color: white;
   font-weight: 700;
-  font-size: 1.125rem;
-  padding: 16px 28px;
+  font-size: 1.05rem;
+  padding: 14px 24px;
   border-radius: 12px;
   width: 100%;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
-  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
 .btn-primary:hover {
@@ -158,19 +186,20 @@ a:hover {
 }
 
 .btn-secondary {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   background-color: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
   font-weight: 600;
   font-size: 0.875rem;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 11px 20px;
+  border-radius: 12px;
+  width: 100%;
   cursor: pointer;
   transition: all 0.2s;
-  margin-top: 12px;
 }
 
 .btn-secondary:hover {
@@ -179,22 +208,41 @@ a:hover {
   border-color: var(--text-secondary);
 }
 
-/* Card layout */
+/* Right Panel (Content cards) */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 32px;
-  margin-bottom: 24px;
   text-align: left;
+}
+
+@media (max-width: 640px) {
+  .card {
+    padding: 24px 20px;
+  }
+}
+
+h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 10px;
 }
 
 /* Steps list */
 .steps-list {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  margin-top: 8px;
+  gap: 20px;
 }
 
 .step-item {
@@ -203,8 +251,8 @@ a:hover {
 }
 
 .step-num {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   background-color: var(--primary-blue);
   color: white;
   border-radius: 50%;
@@ -212,8 +260,9 @@ a:hover {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .step-content {
@@ -221,14 +270,14 @@ a:hover {
 }
 
 .step-title {
-  font-size: 1.05rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 4px;
 }
 
 .step-desc {
-  font-size: 0.925rem;
+  font-size: 0.875rem;
   color: var(--text-secondary);
 }
 
@@ -237,10 +286,9 @@ a:hover {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
-  margin-top: 8px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 600px) {
   .features-grid {
     grid-template-columns: 1fr;
   }
@@ -253,13 +301,13 @@ a:hover {
   padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .feature-title {
   font-weight: 700;
   color: var(--text-primary);
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .feature-desc {
@@ -269,9 +317,9 @@ a:hover {
 
 /* Release notes styling */
 .changelog-content {
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: var(--text-secondary);
-  line-height: 1.7;
+  line-height: 1.6;
 }
 
 .changelog-content ul {
@@ -286,9 +334,9 @@ a:hover {
 .changelog-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
-  font-size: 0.8125rem;
+  gap: 8px;
+  margin-bottom: 20px;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
@@ -301,9 +349,9 @@ a:hover {
 
 /* Footer */
 .footer {
-  margin-top: auto;
+  margin-top: 48px;
   text-align: center;
-  padding: 32px 20px;
+  padding: 32px 20px 0;
   font-size: 0.8125rem;
   color: var(--text-muted);
   border-top: 1px solid var(--border-color);

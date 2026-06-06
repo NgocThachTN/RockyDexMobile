@@ -51,7 +51,7 @@ function App() {
   };
 
   const formatSize = (bytes: number) => {
-    if (!bytes) return '54 MB';
+    if (!bytes) return '54.1 MB';
     const k = 1024;
     const dm = 1;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -80,7 +80,7 @@ function App() {
               <h3 
                 key={idx} 
                 style={{ 
-                  fontSize: '0.95rem', 
+                  fontSize: '0.9rem', 
                   fontWeight: '700', 
                   margin: '16px 0 8px', 
                   color: '#f8fafc',
@@ -99,7 +99,7 @@ function App() {
               </li>
             );
           }
-          return <p key={idx} style={{ marginBottom: '8px', fontSize: '0.9rem' }}>{cleanLine}</p>;
+          return <p key={idx} style={{ marginBottom: '8px', fontSize: '0.875rem' }}>{cleanLine}</p>;
         })}
       </div>
     );
@@ -107,136 +107,139 @@ function App() {
 
   return (
     <div className="container">
-      {/* Header with App Logo */}
-      <header className="header-section">
-        <img 
-          src="/app_icon.png" 
-          alt="RockyDex Logo" 
-          className="app-logo" 
-        />
-        <h1>RockyDex</h1>
-        <p className="tagline">
-          Ứng dụng đọc truyện tranh tối giản, nhanh chóng và mượt mà cho người dùng Việt Nam. Dữ liệu lưu offline hoàn toàn.
-        </p>
+      <div className="main-layout">
         
-        <div className="version-badge">
-          <span className="pulse-dot"></span>
-          <span>Phiên bản mới nhất: {currentVersion}</span>
-        </div>
-
-        {/* Call to Action Buttons */}
-        <div className="download-action">
-          <a href={downloadUrl} download>
-            <button className="btn-primary" type="button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              Tải Xuống APK Ngay
-            </button>
-          </a>
+        {/* Left Column: Sticky App info */}
+        <aside className="left-panel">
+          <img 
+            src="/app_icon.png" 
+            alt="RockyDex Logo" 
+            className="app-logo" 
+          />
+          <h1>RockyDex</h1>
+          <p className="tagline">
+            Ứng dụng đọc truyện tranh tối giản, nhanh chóng và mượt mà cho người dùng Việt Nam. Dữ liệu lưu offline hoàn toàn.
+          </p>
           
-          <a href="https://github.com/NgocThachTN/RockyDexMobile" target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
-            <button className="btn-secondary" type="button">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
-              </svg>
-              Xem Dự Án Trên GitHub
-            </button>
-          </a>
-        </div>
-      </header>
-
-      <main>
-        {/* Step-by-step installation guide */}
-        <section className="card">
-          <h2>Hướng Dẫn Tải & Cài Đặt</h2>
-          <div className="steps-list">
-            <div className="step-item">
-              <div className="step-num">1</div>
-              <div className="step-content">
-                <div className="step-title">Tải tệp tin APK</div>
-                <div className="step-desc">
-                  Nhấp vào nút "Tải Xuống APK Ngay" ở trên để tải tệp cài đặt định dạng `.apk` trực tiếp về thiết bị Android của bạn.
-                </div>
-              </div>
-            </div>
-
-            <div className="step-item">
-              <div className="step-num">2</div>
-              <div className="step-content">
-                <div className="step-title">Cho phép cài đặt từ nguồn không xác định</div>
-                <div className="step-desc">
-                  Nếu đây là lần đầu tiên bạn tự cài đặt file APK ngoài Google Play, điện thoại sẽ hỏi xác nhận. Hãy vào phần Cài đặt của trình duyệt hoặc quản lý tệp và bật tùy chọn "Cho phép cài đặt từ nguồn này".
-                </div>
-              </div>
-            </div>
-
-            <div className="step-item">
-              <div className="step-num">3</div>
-              <div className="step-content">
-                <div className="step-title">Tiến hành cài đặt</div>
-                <div className="step-desc">
-                  Mở tệp cài đặt `.apk` đã tải xuống và nhấp chọn "Cài đặt" (Install). Sau khi cài đặt hoàn tất, bạn có thể mở và sử dụng RockyDex ngay lập tức.
-                </div>
-              </div>
-            </div>
+          <div className="version-badge">
+            <span className="pulse-dot"></span>
+            <span>Bản mới nhất: {currentVersion}</span>
           </div>
-        </section>
 
-        {/* Feature Cards */}
-        <section className="card" style={{ textAlign: 'center' }}>
-          <h2>Tính Năng Nổi Bật</h2>
-          <div className="features-grid">
-            <div className="feature-item">
-              <div className="feature-title">Đọc Truyện Offline</div>
-              <div className="feature-desc">Danh sách yêu thích và lịch sử chương đã đọc được lưu trữ ngoại tuyến hoàn toàn trên thiết bị của bạn.</div>
-            </div>
-            <div className="feature-item">
-              <div className="feature-title">Bộ Lọc Thể Loại Xịn Sò</div>
-              <div className="feature-desc">Thanh phân loại dạng chip cuộn ngang tiện lợi. Tìm kiếm, lọc theo năm và quốc gia cực nhanh.</div>
-            </div>
-            <div className="feature-item">
-              <div className="feature-title">Tối Ưu Cho Máy Nhỏ</div>
-              <div className="feature-desc">Kích thước font chữ và các nút bấm co giãn thông minh, tương thích tuyệt đối cho các dòng máy tỉ lệ 16:9.</div>
-            </div>
-            <div className="feature-item">
-              <div className="feature-title">Cập Nhật Tự Động</div>
-              <div className="feature-desc">Ứng dụng tự động thông báo cập nhật phiên bản mới trực tiếp mỗi khi có bản phát hành trên GitHub.</div>
-            </div>
+          <div className="download-action">
+            <a href={downloadUrl} download style={{ width: '100%' }}>
+              <button className="btn-primary" type="button">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Tải Xuống APK Ngay
+              </button>
+            </a>
+            
+            <a href="https://github.com/NgocThachTN/RockyDexMobile" target="_blank" rel="noopener noreferrer" style={{ width: '100%' }}>
+              <button className="btn-secondary" type="button">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" />
+                </svg>
+                Xem Trên GitHub
+              </button>
+            </a>
           </div>
-        </section>
+        </aside>
 
-        {/* Dynamic Changelog from GitHub Release */}
-        <section className="card">
-          <h2>Nhật Ký Phiên Bản ({currentVersion})</h2>
-          {isLoading ? (
-            <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Đang tải nhật ký cập nhật...</div>
-          ) : release ? (
-            <div>
-              <div className="changelog-meta">
-                <span>Ngày phát hành: {formatDate(release.published_at)}</span>
-                <span>Dung lượng: {formatSize(release.assets[0]?.size)}</span>
-                <span>Số lượt tải: {release.assets[0]?.download_count || 0} lần</span>
+        {/* Right Column: Content Cards */}
+        <main className="right-panel">
+          {/* Step-by-step installation guide */}
+          <section className="card">
+            <h2>Hướng Dẫn Tải & Cài Đặt</h2>
+            <div className="steps-list">
+              <div className="step-item">
+                <div className="step-num">1</div>
+                <div className="step-content">
+                  <div className="step-title">Tải tệp tin APK</div>
+                  <div className="step-desc">
+                    Nhấp vào nút "Tải Xuống APK Ngay" ở cột bên trái để tải tệp cài đặt định dạng `.apk` trực tiếp về thiết bị Android.
+                  </div>
+                </div>
               </div>
-              {renderChangelog(release.body)}
-            </div>
-          ) : (
-            <div style={{ color: '#94a3b8' }}>
-              <div className="changelog-meta">
-                <span>Tên file: rockydex-v1.0.10.apk</span>
-                <span>Dung lượng: 54.1 MB</span>
+
+              <div className="step-item">
+                <div className="step-num">2</div>
+                <div className="step-content">
+                  <div className="step-title">Cho phép nguồn không xác định</div>
+                  <div className="step-desc">
+                    Điện thoại Android sẽ hỏi xác nhận khi cài đặt file APK từ bên ngoài. Hãy mở phần Cài đặt hệ thống của bạn và chọn "Cho phép cài đặt từ nguồn này".
+                  </div>
+                </div>
               </div>
-              <p style={{ marginBottom: '8px' }}>Không thể kết nối API GitHub. Dưới đây là các thay đổi chính trong v1.0.10:</p>
-              <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Tối ưu hóa giao diện trang chi tiết truyện gọn gàng hơn.</li>
-              <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Chuyển danh sách thể loại thành thanh cuộn ngang.</li>
-              <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Hiển thị rõ ràng tên tiếng Anh/tên gốc với độ tương phản cao.</li>
-              <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Sửa lỗi font tiếng Việt và căn chỉnh ô tìm kiếm trên mọi màn hình.</li>
+
+              <div className="step-item">
+                <div className="step-num">3</div>
+                <div className="step-content">
+                  <div className="step-title">Hoàn tất cài đặt</div>
+                  <div className="step-desc">
+                    Mở tệp cài đặt `.apk` đã tải xuống và chọn "Cài đặt". Sau khi chạy xong, biểu tượng RockyDex sẽ xuất hiện trên màn hình chính của bạn.
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-        </section>
-      </main>
+          </section>
+
+          {/* Feature Cards */}
+          <section className="card">
+            <h2>Tính Năng Nổi Bật</h2>
+            <div className="features-grid">
+              <div className="feature-item">
+                <div className="feature-title">Đọc Truyện Offline</div>
+                <div className="feature-desc">Toàn bộ danh sách yêu thích và lịch sử đọc truyện được lưu trữ offline hoàn toàn trên thiết bị của bạn.</div>
+              </div>
+              <div className="feature-item">
+                <div className="feature-title">Bộ Lọc Cuộn Ngang</div>
+                <div className="feature-desc">Thanh phân loại dạng chip cuộn ngang mượt mà. Lọc nhanh theo thể loại, quốc gia, năm phát hành chỉ với 1 chạm.</div>
+              </div>
+              <div className="feature-item">
+                <div className="feature-title">Giao Diện Màn Hình 16:9</div>
+                <div className="feature-desc">Tự động tối ưu hóa cỡ chữ, khoảng cách và các nút bấm phù hợp hoàn hảo với điện thoại màn hình 16:9 nhỏ gọn.</div>
+              </div>
+              <div className="feature-item">
+                <div className="feature-title">Tự Động Kiểm Tra Cập Nhật</div>
+                <div className="feature-desc">Tự động phát hiện phiên bản mới từ GitHub Release và gửi thông báo trực tiếp bên trong ứng dụng.</div>
+              </div>
+            </div>
+          </section>
+
+          {/* Dynamic Changelog from GitHub Release */}
+          <section className="card">
+            <h2>Nhật Ký Phiên Bản ({currentVersion})</h2>
+            {isLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>Đang tải nhật ký cập nhật...</div>
+            ) : release ? (
+              <div>
+                <div className="changelog-meta">
+                  <span>Ngày phát hành: {formatDate(release.published_at)}</span>
+                  <span>Dung lượng: {formatSize(release.assets[0]?.size)}</span>
+                  <span>Lượt tải: {release.assets[0]?.download_count || 0} lần</span>
+                </div>
+                {renderChangelog(release.body)}
+              </div>
+            ) : (
+              <div>
+                <div className="changelog-meta">
+                  <span>Tên file: rockydex-v1.0.10.apk</span>
+                  <span>Dung lượng: 54.1 MB</span>
+                </div>
+                <p style={{ marginBottom: '8px' }}>Không thể tải nhật ký cập nhật trực tiếp. Dưới đây là các thay đổi chính trong v1.0.10:</p>
+                <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Tối ưu hóa giao diện trang chi tiết truyện gọn gàng hơn.</li>
+                <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Chuyển danh sách thể loại thành thanh cuộn ngang.</li>
+                <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Hiển thị rõ ràng tên tiếng Anh/tên gốc với độ tương phản cao.</li>
+                <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Sửa lỗi font tiếng Việt và ô tìm kiếm trên mọi màn hình.</li>
+              </div>
+            )}
+          </section>
+        </main>
+      </div>
 
       <footer className="footer">
         <p>&copy; {new Date().getFullYear()} RockyDex. Dự án mã nguồn mở phát hành dưới giấy phép MIT.</p>
