@@ -73,12 +73,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final comicSlug = state.pathParameters['comicSlug']!;
           final chapterSlug = state.pathParameters['chapterSlug']!;
-          // We can also pass chapter_api_data URL in extra if needed
-          final apiDataUrl = state.extra as String?;
+          
+          String? apiDataUrl;
+          String? comicName;
+          String? comicThumb;
+          String? chapterName;
+          
+          if (state.extra is Map<String, dynamic>) {
+            final extraMap = state.extra as Map<String, dynamic>;
+            apiDataUrl = extraMap['api_data_url'] as String?;
+            comicName = extraMap['comic_name'] as String?;
+            comicThumb = extraMap['comic_thumb'] as String?;
+            chapterName = extraMap['chapter_name'] as String?;
+          } else {
+            apiDataUrl = state.extra as String?;
+          }
+          
           return ReaderScreen(
             comicSlug: comicSlug,
             chapterSlug: chapterSlug,
             apiDataUrl: apiDataUrl,
+            comicName: comicName,
+            comicThumb: comicThumb,
+            chapterName: chapterName,
           );
         },
       ),

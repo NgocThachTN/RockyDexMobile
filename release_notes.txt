@@ -1,3 +1,9 @@
+Cập nhật v1.1.0:
+- Nâng cấp phiên bản hệ thống lên v1.1.0+14.
+- Sửa lỗi không lưu lịch sử đọc khi đọc truyện nguồn MangaDex bằng cách lưu trực tiếp siêu dữ liệu từ màn hình chi tiết truyện và bổ sung cơ chế tải lại dữ liệu tức thì.
+- Chuyển phần cài đặt trình đọc (chế độ đọc dọc/ngang, thanh chỉnh độ sáng) gọn gàng vào cửa sổ Bottom Sheet cài đặt mới đặt trên thanh tiêu đề (Header).
+- Hiển thị đầy đủ tên truyện, số chương và tiêu đề chương truyện MangaDex trên Header khi đang đọc.
+
 Cập nhật v1.0.12:
 - Nâng cấp phiên bản hệ thống lên v1.0.12+13.
 - Tối ưu hóa nguồn MangaDex tại trang Thể loại: Sắp xếp danh sách thể loại theo bảng chữ cái tiếng Anh, tối ưu bộ lọc Trạng thái trực tiếp từ server-side của API MangaDex.

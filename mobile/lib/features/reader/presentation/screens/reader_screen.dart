@@ -12,17 +12,24 @@ import '../../domain/chapter_detail_model.dart';
 import '../reader_providers.dart';
 import '../../../comic/presentation/comic_detail_providers.dart';
 import '../../../comic/domain/comic_detail_model.dart';
+import '../../../library/presentation/library_providers.dart';
 
 class ReaderScreen extends ConsumerStatefulWidget {
   final String comicSlug;
   final String chapterSlug;
   final String? apiDataUrl;
+  final String? comicName;
+  final String? comicThumb;
+  final String? chapterName;
 
   const ReaderScreen({
     super.key,
     required this.comicSlug,
     required this.chapterSlug,
     this.apiDataUrl,
+    this.comicName,
+    this.comicThumb,
+    this.chapterName,
   });
 
   @override
@@ -54,6 +61,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     _scrollController.dispose();
     _pageController.dispose();
+    // Invalidate libraryHistoryProvider so that next time HistoryScreen builds, it has fresh data
+    ref.invalidate(libraryHistoryProvider);
     super.dispose();
   }
 
@@ -98,9 +107,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final chapterState = ref.read(readerChapterDetailProvider(apiDataUrl));
     final comicDetailState = ref.read(comicDetailProvider(widget.comicSlug));
 
-    String comicName = widget.comicSlug.replaceAll('-', ' ');
-    String chapterName = widget.chapterSlug.replaceAll('chap-', '');
-    String comicThumb = '';
+    String comicName = widget.comicName ?? widget.comicSlug.replaceAll('-', ' ');
+    String chapterName = widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
+    String comicThumb = widget.comicThumb ?? '';
 
     if (comicDetailState.hasValue) {
       final comic = comicDetailState.value!;
@@ -148,6 +157,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           chapterName: chapterName,
           progressPercent: progressPercent,
         );
+    
+    // Invalidate libraryHistoryProvider to refresh the history list
+    ref.invalidate(libraryHistoryProvider);
   }
 
   void _toggleUI() {
@@ -330,6 +342,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
   Widget _buildTopBar(BuildContext context, AsyncValue<ChapterDetailInfoModel> chapterAsync) {
     final comicDetailState = ref.watch(comicDetailProvider(widget.comicSlug));
+    final settings = ref.watch(readerSettingsProvider);
     
     String title = 'Đang tải...';
     if (comicDetailState.hasValue) {
@@ -354,8 +367,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         if (matchedChapter.chapterName.isNotEmpty) {
           chapterName = matchedChapter.chapterName;
         }
+        title = '$comicName - Ch. $chapterName';
+        if (matchedChapter.chapterTitle.isNotEmpty) {
+          title += ': ${matchedChapter.chapterTitle}';
+        }
+      } else {
+        title = '$comicName - Ch. $chapterName';
       }
-      title = '$comicName - Ch. $chapterName';
     } else if (chapterAsync.hasValue) {
       final c = chapterAsync.value!;
       if (c.item.comicName.isNotEmpty) {
@@ -391,11 +409,161 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.tune_rounded, color: Colors.white),
+                  tooltip: 'Cài đặt trình đọc',
+                  onPressed: () => _showReaderSettingsSheet(context, settings),
+                ),
+                const SizedBox(width: 8),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  void _showReaderSettingsSheet(BuildContext context, ReaderSettings settings) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black.withOpacity(0.9),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final currentSettings = ref.watch(readerSettingsProvider);
+            return SafeArea(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Cài Đặt Trình Đọc',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Colors.white24, height: 1),
+                    const SizedBox(height: 16),
+                    
+                    // Layout Mode
+                    const Text(
+                      'Chế độ đọc',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            showCheckmark: false,
+                            label: const Center(
+                              child: Text(
+                                'Cuộn dọc',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            selected: currentSettings.layout == 'vertical',
+                            selectedColor: AppColors.primaryBlue,
+                            backgroundColor: Colors.white12,
+                            labelStyle: TextStyle(
+                              color: currentSettings.layout == 'vertical' ? Colors.white : Colors.white60,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                ref.read(readerSettingsProvider.notifier).updateLayout('vertical');
+                                setModalState(() {});
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ChoiceChip(
+                            showCheckmark: false,
+                            label: const Center(
+                              child: Text(
+                                'Lướt ngang',
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            selected: currentSettings.layout == 'horizontal',
+                            selectedColor: AppColors.primaryBlue,
+                            backgroundColor: Colors.white12,
+                            labelStyle: TextStyle(
+                              color: currentSettings.layout == 'horizontal' ? Colors.white : Colors.white60,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                ref.read(readerSettingsProvider.notifier).updateLayout('horizontal');
+                                setModalState(() {});
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Brightness
+                    const Text(
+                      'Độ sáng màn hình',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.brightness_low, color: Colors.white54, size: 18),
+                        Expanded(
+                          child: Slider(
+                            value: currentSettings.brightness,
+                            min: 0.1,
+                            max: 1.0,
+                            activeColor: AppColors.primaryBlue,
+                            inactiveColor: Colors.white24,
+                            onChanged: (val) {
+                              ref.read(readerSettingsProvider.notifier).updateBrightness(val);
+                              setModalState(() {});
+                            },
+                          ),
+                        ),
+                        const Icon(Icons.brightness_high, color: Colors.white, size: 18),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -412,7 +580,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
             color: Colors.black.withOpacity(0.6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -446,7 +614,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                       final prevChap = chaptersList[currentIdx - 1];
                                       context.pushReplacement(
                                         '/reader/${widget.comicSlug}/${prevChap.chapterSlug}',
-                                        extra: prevChap.chapterApiData,
+                                        extra: {
+                                          'api_data_url': prevChap.chapterApiData,
+                                          'comic_name': comic.name,
+                                          'comic_thumb': comic.thumbUrl,
+                                          'chapter_name': prevChap.chapterName,
+                                        },
                                       );
                                     }
                                   : null,
@@ -474,7 +647,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                       final nextChap = chaptersList[currentIdx + 1];
                                       context.pushReplacement(
                                         '/reader/${widget.comicSlug}/${nextChap.chapterSlug}',
-                                        extra: nextChap.chapterApiData,
+                                        extra: {
+                                          'api_data_url': nextChap.chapterApiData,
+                                          'comic_name': comic.name,
+                                          'comic_thumb': comic.thumbUrl,
+                                          'chapter_name': nextChap.chapterName,
+                                        },
                                       );
                                     }
                                   : null,
@@ -506,40 +684,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 Text(
                   'Trang $_currentPage / $_totalPages',
                   style: const TextStyle(color: Colors.white70, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-
-                // Layout & Brightness controls
-                Row(
-                  children: [
-                    // Layout selector icon
-                    IconButton(
-                      icon: Icon(
-                        settings.layout == 'vertical' ? Icons.splitscreen : Icons.menu_book,
-                        color: Colors.white,
-                      ),
-                      onPressed: () {
-                        final nextLayout = settings.layout == 'vertical' ? 'horizontal' : 'vertical';
-                        ref.read(readerSettingsProvider.notifier).updateLayout(nextLayout);
-                      },
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Brightness Slider
-                    const Icon(Icons.brightness_medium, color: Colors.white54, size: 18),
-                    Expanded(
-                      child: Slider(
-                        value: settings.brightness,
-                        min: 0.1,
-                        max: 1.0,
-                        activeColor: AppColors.primaryBlue,
-                        inactiveColor: Colors.white24,
-                        onChanged: (val) {
-                          ref.read(readerSettingsProvider.notifier).updateBrightness(val);
-                        },
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),

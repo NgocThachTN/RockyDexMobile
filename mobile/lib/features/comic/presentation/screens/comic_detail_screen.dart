@@ -263,14 +263,24 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                       );
                                       context.push(
                                         '/reader/${widget.slug}/${targetChapter.chapterSlug}',
-                                        extra: targetChapter.chapterApiData,
+                                        extra: {
+                                          'api_data_url': targetChapter.chapterApiData,
+                                          'comic_name': comic.name,
+                                          'comic_thumb': comic.thumbUrl,
+                                          'chapter_name': targetChapter.chapterName,
+                                        },
                                       );
                                     } else {
                                       // Read First
                                       final firstChapter = chaptersList.first;
                                       context.push(
                                         '/reader/${widget.slug}/${firstChapter.chapterSlug}',
-                                        extra: firstChapter.chapterApiData,
+                                        extra: {
+                                          'api_data_url': firstChapter.chapterApiData,
+                                          'comic_name': comic.name,
+                                          'comic_thumb': comic.thumbUrl,
+                                          'chapter_name': firstChapter.chapterName,
+                                        },
                                       );
                                     }
                                   },
@@ -529,7 +539,12 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                 onTap: () {
                                   context.push(
                                     '/reader/${widget.slug}/${chap.chapterSlug}',
-                                    extra: chap.chapterApiData,
+                                    extra: {
+                                      'api_data_url': chap.chapterApiData,
+                                      'comic_name': comic.name,
+                                      'comic_thumb': comic.thumbUrl,
+                                      'chapter_name': chap.chapterName,
+                                    },
                                   );
                                 },
                               ),
