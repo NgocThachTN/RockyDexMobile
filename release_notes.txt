@@ -1,8 +1,0 @@
-﻿Cập nhật v1.0.4:
-- Tự động tải trước toàn bộ ảnh trong chương và thêm chạm hai bên để chuyển trang.
-- Sửa lỗi hiển thị tên chương và ảnh bìa trong lịch sử đọc.
-- Chuyển Tủ sách (Yêu thích, Lịch sử) sang tab Cá nhân, hỗ trợ xoá lịch sử.
-- Thêm tab Thể loại mới ở thanh điều hướng dưới.
-- Thu gọn thanh tiêu đề trang chủ để tối ưu không gian hiển thị.
-- Tìm kiếm tức thì khi nhập và thêm bộ lọc nâng cao (Quốc gia, Trạng thái, Năm).
-- Nâng cấp phiên bản hệ thống lên v1.0.4 để tránh xung đột gói.
