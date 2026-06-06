@@ -72,16 +72,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 48,
-        leadingWidth: 40,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            }
-          },
-        ),
-        titleSpacing: 0,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        titleSpacing: 16,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -117,6 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
         ],
         bottom: TabBar(
           controller: _tabController,
+          dividerColor: Colors.transparent,
           tabs: const [
             Tab(text: 'Mới cập nhật'),
             Tab(text: 'Truyện mới'),

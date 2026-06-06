@@ -268,29 +268,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       controller: _scrollController,
       padding: EdgeInsets.zero,
       itemCount: urls.length,
+      cacheExtent: 3000, // Preload images 3000px ahead/behind to prevent loading blank screens
       itemBuilder: (context, index) {
-        return CachedNetworkImage(
-          imageUrl: urls[index],
-          fit: BoxFit.fitWidth,
-          width: double.infinity,
-          placeholder: (context, url) => Container(
-            height: 400,
-            color: Colors.black,
-            child: const Center(
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
-            ),
-          ),
-          errorWidget: (context, url, error) => Container(
-            height: 200,
-            color: Colors.grey[900],
-            child: const Center(
-              child: Icon(Icons.broken_image, color: Colors.white30, size: 50),
-            ),
-          ),
-        );
+        return _VerticalPageItem(imageUrl: urls[index]);
       },
     );
   }
+
 
   Widget _buildHorizontalGallery(List<String> urls) {
     return PhotoViewGallery.builder(
@@ -495,6 +479,43 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VerticalPageItem extends StatefulWidget {
+  final String imageUrl;
+  const _VerticalPageItem({required this.imageUrl});
+
+  @override
+  State<_VerticalPageItem> createState() => _VerticalPageItemState();
+}
+
+class _VerticalPageItemState extends State<_VerticalPageItem> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return CachedNetworkImage(
+      imageUrl: widget.imageUrl,
+      fit: BoxFit.fitWidth,
+      width: double.infinity,
+      placeholder: (context, url) => Container(
+        height: 400,
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        height: 200,
+        color: Colors.grey[900],
+        child: const Center(
+          child: Icon(Icons.broken_image, color: Colors.white30, size: 50),
         ),
       ),
     );

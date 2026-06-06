@@ -56,10 +56,9 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
 
             final statuses = [
               {'name': 'Tất cả trạng thái', 'value': 'all'},
-              {'name': 'Đang phát hành', 'value': 'dang-phat-hanh'},
-              {'name': 'Hoàn thành', 'value': 'hoan-thanh'},
-              {'name': 'Sắp ra mắt', 'value': 'sap-ra-mat'},
-              {'name': 'Truyện mới', 'value': 'truyen-moi'},
+              {'name': 'Đang phát hành', 'value': 'ongoing'},
+              {'name': 'Hoàn thành', 'value': 'completed'},
+              {'name': 'Sắp ra mắt', 'value': 'coming_soon'},
             ];
 
             final years = [
@@ -183,10 +182,9 @@ class _CategoryDetailScreenState extends ConsumerState<CategoryDetailScreen> {
 
     final statusLabel = {
       'all': '',
-      'dang-phat-hanh': 'Đang phát hành',
-      'hoan-thanh': 'Hoàn thành',
-      'sap-ra-mat': 'Sắp ra mắt',
-      'truyen-moi': 'Truyện mới',
+      'ongoing': 'Đang phát hành',
+      'completed': 'Hoàn thành',
+      'coming_soon': 'Sắp ra mắt',
     }[state.selectedStatus]!;
 
     final yearLabel = {

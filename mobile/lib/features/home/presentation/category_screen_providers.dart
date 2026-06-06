@@ -32,22 +32,24 @@ class CategoryComicsState {
         return false;
       }
 
-      // 2. Filter by year
+      // 2. Filter by year (extracted from updatedAt as the API doesn't provide a release year)
       if (selectedYear != 'all') {
-        final hasYear = comic.category.any((cat) {
-          final slug = cat.slug.toLowerCase();
-          final name = cat.name.toLowerCase();
-          if (selectedYear == 'before_2021') {
-            final yearMatch = RegExp(r'20\d{2}').firstMatch(slug);
-            if (yearMatch != null) {
-              final year = int.tryParse(yearMatch.group(0)!);
-              if (year != null && year < 2021) return true;
+        final yearMatch = RegExp(r'^(\d{4})').firstMatch(comic.updatedAt);
+        if (yearMatch != null) {
+          final yearStr = yearMatch.group(1);
+          final year = int.tryParse(yearStr ?? '');
+          if (year != null) {
+            if (selectedYear == 'before_2021') {
+              if (year >= 2021) return false;
+            } else {
+              if (yearStr != selectedYear) return false;
             }
-            return name.contains('trước 2021') || name.contains('2020') || name.contains('2019') || name.contains('2018');
+          } else {
+            return false;
           }
-          return slug == selectedYear || name.contains(selectedYear);
-        });
-        if (!hasYear) return false;
+        } else {
+          return false;
+        }
       }
 
       return true;
