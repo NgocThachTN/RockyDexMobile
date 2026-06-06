@@ -10,6 +10,10 @@ class CategoryComicsState {
   final bool hasMore;
   final String? error;
 
+  // Filters
+  final String selectedStatus;  // 'all', 'ongoing', 'completed'
+  final String selectedYear;    // 'all', '2026', '2025', '2024', '2023', '2022', '2021', 'before_2021'
+
   CategoryComicsState({
     this.comics = const [],
     this.isLoading = false,
@@ -17,7 +21,38 @@ class CategoryComicsState {
     this.page = 1,
     this.hasMore = true,
     this.error,
+    this.selectedStatus = 'all',
+    this.selectedYear = 'all',
   });
+
+  List<ComicModel> get filteredComics {
+    return comics.where((comic) {
+      // 1. Filter by status
+      if (selectedStatus != 'all' && comic.status != selectedStatus) {
+        return false;
+      }
+
+      // 2. Filter by year
+      if (selectedYear != 'all') {
+        final hasYear = comic.category.any((cat) {
+          final slug = cat.slug.toLowerCase();
+          final name = cat.name.toLowerCase();
+          if (selectedYear == 'before_2021') {
+            final yearMatch = RegExp(r'20\d{2}').firstMatch(slug);
+            if (yearMatch != null) {
+              final year = int.tryParse(yearMatch.group(0)!);
+              if (year != null && year < 2021) return true;
+            }
+            return name.contains('trước 2021') || name.contains('2020') || name.contains('2019') || name.contains('2018');
+          }
+          return slug == selectedYear || name.contains(selectedYear);
+        });
+        if (!hasYear) return false;
+      }
+
+      return true;
+    }).toList();
+  }
 
   CategoryComicsState copyWith({
     List<ComicModel>? comics,
@@ -26,6 +61,8 @@ class CategoryComicsState {
     int? page,
     bool? hasMore,
     String? error,
+    String? selectedStatus,
+    String? selectedYear,
   }) {
     return CategoryComicsState(
       comics: comics ?? this.comics,
@@ -34,6 +71,8 @@ class CategoryComicsState {
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       error: error,
+      selectedStatus: selectedStatus ?? this.selectedStatus,
+      selectedYear: selectedYear ?? this.selectedYear,
     );
   }
 }
@@ -73,6 +112,21 @@ class CategoryComicsNotifier extends StateNotifier<CategoryComicsState> {
         error: e.toString(),
       );
     }
+  }
+
+  void updateStatus(String status) {
+    state = state.copyWith(selectedStatus: status);
+  }
+
+  void updateYear(String year) {
+    state = state.copyWith(selectedYear: year);
+  }
+
+  void resetFilters() {
+    state = state.copyWith(
+      selectedStatus: 'all',
+      selectedYear: 'all',
+    );
   }
 }
 
