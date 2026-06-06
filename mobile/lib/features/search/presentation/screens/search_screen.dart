@@ -309,32 +309,57 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            hintText: 'Tìm kiếm truyện...',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      ref.read(searchProvider.notifier).search('', saveToHistory: false);
-                      setState(() {});
-                    },
-                  )
-                : null,
-            border: InputBorder.none,
+        elevation: 0,
+        title: Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.6),
+              width: 1,
+            ),
           ),
-          onChanged: (val) {
-            setState(() {}); // refresh clear button
-            if (_debounce?.isActive ?? false) _debounce!.cancel();
-            _debounce = Timer(const Duration(milliseconds: 500), () {
-              ref.read(searchProvider.notifier).search(val, saveToHistory: false);
-            });
-          },
-          onSubmitted: _submitSearch,
-          textInputAction: TextInputAction.search,
+          child: TextField(
+            controller: _searchController,
+            textAlignVertical: TextAlignVertical.center,
+            style: const TextStyle(fontSize: 14),
+            decoration: InputDecoration(
+              hintText: 'Tìm kiếm truyện...',
+              hintStyle: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                fontSize: 14,
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                size: 20,
+              ),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        _searchController.clear();
+                        ref.read(searchProvider.notifier).search('', saveToHistory: false);
+                        setState(() {});
+                      },
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+            onChanged: (val) {
+              setState(() {}); // refresh clear button
+              if (_debounce?.isActive ?? false) _debounce!.cancel();
+              _debounce = Timer(const Duration(milliseconds: 500), () {
+                ref.read(searchProvider.notifier).search(val, saveToHistory: false);
+              });
+            },
+            onSubmitted: _submitSearch,
+            textInputAction: TextInputAction.search,
+          ),
         ),
       ),
       body: Column(
