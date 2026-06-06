@@ -85,14 +85,21 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Overlaid Cover
+                          // Overlaid Cover with Shadow
                           Container(
-                            width: 100,
-                            height: 140,
+                            width: 105,
+                            height: 145,
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.25),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                               border: Border.all(
-                                color: Theme.of(context).dividerColor,
+                                color: Theme.of(context).dividerColor.withOpacity(0.5),
                                 width: 1,
                               ),
                             ),
@@ -115,30 +122,67 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                         fontSize: 20,
                                         fontWeight: FontWeight.bold,
+                                        height: 1.2,
                                       ),
                                 ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  comic.author.isNotEmpty ? comic.author.join(', ') : 'Chưa cập nhật tác giả',
-                                  style: Theme.of(context).textTheme.bodyMedium,
+                                if (comic.originName.isNotEmpty && comic.originName.first.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    comic.originName.join(', '),
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                          fontStyle: FontStyle.italic,
+                                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                                        ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.person_outline_rounded,
+                                      size: 15,
+                                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        comic.author.isNotEmpty ? comic.author.join(', ') : 'Chưa cập nhật tác giả',
+                                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                              fontWeight: FontWeight.w500,
+                                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                                            ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: 10),
+                                // Square-cornered Status Badge
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: comic.status == 'ongoing'
-                                        ? AppColors.primaryBlue.withOpacity(0.15)
-                                        : AppColors.success.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(4),
+                                        ? AppColors.primaryBlue.withOpacity(0.12)
+                                        : AppColors.success.withOpacity(0.12),
+                                    border: Border.all(
+                                      color: comic.status == 'ongoing'
+                                          ? AppColors.primaryBlue.withOpacity(0.5)
+                                          : AppColors.success.withOpacity(0.5),
+                                      width: 1,
+                                    ),
                                   ),
                                   child: Text(
-                                    comic.status == 'ongoing' ? 'Đang ra' : 'Hoàn thành',
+                                    comic.status == 'ongoing' ? 'ĐANG RA' : 'HOÀN THÀNH',
                                     style: TextStyle(
                                       color: comic.status == 'ongoing'
                                           ? AppColors.primaryBlue
                                           : AppColors.success,
-                                      fontSize: 10,
+                                      fontSize: 9,
                                       fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
                                 ),
@@ -148,31 +192,44 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                         ],
                       ),
 
-                      // Genres
+                      // Genres (Clickable tags that navigate to the Category Details)
                       const SizedBox(height: 16),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: comic.category.map((cat) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).cardColor,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                                width: 1,
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () {
+                                context.push('/categories/${cat.slug}', extra: cat.name);
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardColor,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Theme.of(context).dividerColor.withOpacity(0.8),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  cat.name,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.9),
+                                  ),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              cat.name,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
                             ),
                           );
                         }).toList(),
                       ),
 
-                      // Actions: Read Buttons
+                      // Actions: Read Buttons with Icons
                       const SizedBox(height: 20),
                       Row(
                         children: [
@@ -183,7 +240,7 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                 final label = hasHistory
                                     ? 'ĐỌC TIẾP (Ch. ${history['chapter_name']})'
                                     : 'ĐỌC TỪ ĐẦU';
-                                return ElevatedButton(
+                                return ElevatedButton.icon(
                                   onPressed: () {
                                     if (chaptersList.isEmpty) return;
                                     if (hasHistory) {
@@ -197,7 +254,7 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                         extra: targetChapter.chapterApiData,
                                       );
                                     } else {
-                                      // Read First (which is usually the last element in standard order, wait, OTruyen API list order: usually index 0 is chap 1, or last is chap 1. In details response, index 0 is typically Chapter 1, but we should make sure. Let's see: in Kingdom response we saw server_data had index 0 as chap 1, index 1 as chap 2. Yes! So chaptersList.first is chapter 1, chaptersList.last is latest.)
+                                      // Read First
                                       final firstChapter = chaptersList.first;
                                       context.push(
                                         '/reader/${widget.slug}/${firstChapter.chapterSlug}',
@@ -205,18 +262,27 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                       );
                                     }
                                   },
+                                  icon: Icon(
+                                    hasHistory ? Icons.shortcut_rounded : Icons.play_arrow_rounded,
+                                    size: 20,
+                                  ),
+                                  label: Text(
+                                    label,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primaryBlue,
                                     foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(vertical: 14),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                    elevation: 0,
-                                  ),
-                                  child: Text(
-                                    label,
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                    elevation: 2,
+                                    shadowColor: AppColors.primaryBlue.withOpacity(0.3),
                                   ),
                                 );
                               },
@@ -230,40 +296,71 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                         ],
                       ),
 
-                      // Description
+                      // Beautiful Description Box
                       const SizedBox(height: 20),
-                      Text(
-                        'Nội dung',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isDescriptionExpanded = !_isDescriptionExpanded;
-                          });
-                        },
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor.withOpacity(0.5),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Theme.of(context).dividerColor.withOpacity(0.3),
+                          ),
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Stripe HTML tags from content or show standard Text
                             Text(
-                              comic.content.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim(),
-                              maxLines: _isDescriptionExpanded ? null : 3,
-                              overflow: _isDescriptionExpanded ? null : TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    height: 1.4,
+                              'Nội dung',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
                                   ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _isDescriptionExpanded ? 'Thu gọn' : 'Xem thêm',
-                              style: const TextStyle(
-                                color: AppColors.primaryBlue,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isDescriptionExpanded = !_isDescriptionExpanded;
+                                });
+                              },
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    comic.content.replaceAll(RegExp(r'<[^>]*>|&[^;]+;'), '').trim(),
+                                    maxLines: _isDescriptionExpanded ? null : 3,
+                                    overflow: _isDescriptionExpanded ? null : TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                          height: 1.5,
+                                          fontSize: 13.5,
+                                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.85),
+                                        ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        _isDescriptionExpanded ? 'Thu gọn' : 'Xem thêm',
+                                        style: const TextStyle(
+                                          color: AppColors.primaryBlue,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 2),
+                                      Icon(
+                                        _isDescriptionExpanded
+                                            ? Icons.keyboard_arrow_up_rounded
+                                            : Icons.keyboard_arrow_down_rounded,
+                                        size: 16,
+                                        color: AppColors.primaryBlue,
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
                             ),
                           ],
