@@ -102,13 +102,40 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     String chapterName = widget.chapterSlug.replaceAll('chap-', '');
     String comicThumb = '';
 
-    if (chapterState.hasValue) {
+    if (comicDetailState.hasValue) {
+      final comic = comicDetailState.value!;
+      comicName = comic.name;
+      comicThumb = comic.thumbUrl;
+
+      // Find the chapter name from the comic details
+      ServerModel? matchedServer;
+      for (final srv in comic.chapters) {
+        if (srv.serverData.any((c) => c.chapterSlug == widget.chapterSlug)) {
+          matchedServer = srv;
+          break;
+        }
+      }
+      final server = matchedServer ?? (comic.chapters.isNotEmpty ? comic.chapters.first : null);
+      if (server != null) {
+        final matchedChapter = server.serverData.firstWhere(
+          (c) => c.chapterSlug == widget.chapterSlug,
+          orElse: () => ChapterModel(filename: '', chapterName: chapterName, chapterTitle: '', chapterApiData: ''),
+        );
+        if (matchedChapter.chapterName.isNotEmpty) {
+          chapterName = matchedChapter.chapterName;
+        }
+      }
+    } else if (chapterState.hasValue) {
       final chapter = chapterState.value!;
-      comicName = chapter.item.comicName;
-      chapterName = chapter.item.chapterName;
+      if (chapter.item.comicName.isNotEmpty) {
+        comicName = chapter.item.comicName;
+      }
+      if (chapter.item.chapterName.isNotEmpty) {
+        chapterName = chapter.item.chapterName;
+      }
     }
 
-    if (comicDetailState.hasValue) {
+    if (comicDetailState.hasValue && comicThumb.isEmpty) {
       comicThumb = comicDetailState.value!.thumbUrl;
     }
 
@@ -302,11 +329,43 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   }
 
   Widget _buildTopBar(BuildContext context, AsyncValue<ChapterDetailInfoModel> chapterAsync) {
-    final title = chapterAsync.when(
-      data: (c) => '${c.item.comicName} - Ch. ${c.item.chapterName}',
-      loading: () => 'Đang tải...',
-      error: (_, __) => 'Lỗi tải trang',
-    );
+    final comicDetailState = ref.watch(comicDetailProvider(widget.comicSlug));
+    
+    String title = 'Đang tải...';
+    if (comicDetailState.hasValue) {
+      final comic = comicDetailState.value!;
+      final comicName = comic.name;
+      String chapterName = widget.chapterSlug.replaceAll('chap-', '');
+      
+      // Find matching chapter name
+      ServerModel? matchedServer;
+      for (final srv in comic.chapters) {
+        if (srv.serverData.any((c) => c.chapterSlug == widget.chapterSlug)) {
+          matchedServer = srv;
+          break;
+        }
+      }
+      final server = matchedServer ?? (comic.chapters.isNotEmpty ? comic.chapters.first : null);
+      if (server != null) {
+        final matchedChapter = server.serverData.firstWhere(
+          (c) => c.chapterSlug == widget.chapterSlug,
+          orElse: () => ChapterModel(filename: '', chapterName: chapterName, chapterTitle: '', chapterApiData: ''),
+        );
+        if (matchedChapter.chapterName.isNotEmpty) {
+          chapterName = matchedChapter.chapterName;
+        }
+      }
+      title = '$comicName - Ch. $chapterName';
+    } else if (chapterAsync.hasValue) {
+      final c = chapterAsync.value!;
+      if (c.item.comicName.isNotEmpty) {
+        title = '${c.item.comicName} - Ch. ${c.item.chapterName}';
+      } else {
+        title = widget.comicSlug.replaceAll('-', ' ');
+      }
+    } else if (chapterAsync.hasError) {
+      title = 'Lỗi tải trang';
+    }
 
     return Positioned(
       top: 0,

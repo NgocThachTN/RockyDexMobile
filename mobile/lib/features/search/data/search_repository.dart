@@ -114,7 +114,9 @@ class SearchRepository {
       }
 
       final rawStatus = attributes['status'] as String? ?? 'ongoing';
-      final status = rawStatus == 'completed' ? 'completed' : 'ongoing';
+      final status = rawStatus == 'completed'
+          ? 'completed'
+          : (rawStatus == 'hiatus' ? 'coming_soon' : 'ongoing');
 
       final tagsList = attributes['tags'] as List? ?? [];
       final List<CategoryModel> cats = [];

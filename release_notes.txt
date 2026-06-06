@@ -1,4 +1,11 @@
-﻿Cập nhật v1.0.5:
+Cập nhật v1.0.12:
+- Nâng cấp phiên bản hệ thống lên v1.0.12+13.
+- Tối ưu hóa nguồn MangaDex tại trang Thể loại: Sắp xếp danh sách thể loại theo bảng chữ cái tiếng Anh, tối ưu bộ lọc Trạng thái trực tiếp từ server-side của API MangaDex.
+- Ánh xạ chính xác trạng thái truyện MangaDex (ongoing, completed, hiatus -> coming_soon).
+- Sửa lỗi lưu lịch sử đọc của nguồn MangaDex bị trống thông tin tên truyện và chương.
+- Sửa lỗi tiêu đề thanh TopBar của trình đọc MangaDex bị trống tiêu đề truyện.
+
+Cập nhật v1.0.5:
 - Nâng cấp phiên bản hệ thống lên v1.0.5 để tạo bản phát hành mới.
 - Chuẩn hóa các bộ lọc và nhãn trạng thái theo đúng API của OTruyen (Đang phát hành, Hoàn thành, Sắp ra mắt, Truyện mới).
 - Hỗ trợ phân trang cuộn mượt mà theo đúng số lượng dữ liệu trả về tự nhiên từ API của OTruyen.

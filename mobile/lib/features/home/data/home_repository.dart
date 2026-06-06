@@ -107,12 +107,14 @@ class HomeRepository {
           responseData = jsonDecode(responseData);
         }
         final items = responseData['data'] as List;
-        return items.map((item) {
+        final list = items.map((item) {
           final id = item['id'] as String? ?? '';
           final nameMap = item['attributes']['name'] as Map? ?? {};
           final name = nameMap['en'] as String? ?? nameMap.values.firstOrNull as String? ?? '';
           return CategoryModel(id: id, name: name, slug: id);
         }).toList();
+        list.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        return list;
       } catch (e) {
         throw Exception('Không thể tải thể loại MangaDex: $e');
       }
@@ -136,19 +138,33 @@ class HomeRepository {
   Future<List<ComicModel>> getComicsByCategory(
     String categorySlug, {
     int page = 1,
+    String status = 'all',
+    String year = 'all',
   }) async {
     if (_source == ServerSource.mangadex) {
       try {
         final offset = (page - 1) * 20;
+        final queryParams = <String, dynamic>{
+          'limit': 20,
+          'offset': offset,
+          'includedTags[]': [categorySlug],
+          'includes[]': ['cover_art', 'author'],
+          'order[latestUploadedChapter]': 'desc',
+        };
+
+        if (status != 'all') {
+          if (status == 'ongoing') {
+            queryParams['status[]'] = 'ongoing';
+          } else if (status == 'completed') {
+            queryParams['status[]'] = 'completed';
+          } else if (status == 'coming_soon') {
+            queryParams['status[]'] = 'hiatus';
+          }
+        }
+
         final response = await _mangadexApi.get(
           '/manga',
-          queryParameters: {
-            'limit': 20,
-            'offset': offset,
-            'includedTags[]': [categorySlug],
-            'includes[]': ['cover_art', 'author'],
-            'order[latestUploadedChapter]': 'desc',
-          },
+          queryParameters: queryParams,
         );
         return _mapMangaDexComicsResponse(response.data);
       } catch (e) {
@@ -222,7 +238,9 @@ class HomeRepository {
       }
 
       final rawStatus = attributes['status'] as String? ?? 'ongoing';
-      final status = rawStatus == 'completed' ? 'completed' : 'ongoing';
+      final status = rawStatus == 'completed'
+          ? 'completed'
+          : (rawStatus == 'hiatus' ? 'coming_soon' : 'ongoing');
 
       final tagsList = attributes['tags'] as List? ?? [];
       final List<CategoryModel> cats = [];

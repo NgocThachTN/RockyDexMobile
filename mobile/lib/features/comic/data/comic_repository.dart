@@ -126,7 +126,9 @@ class ComicRepository {
 
       // Status
       final rawStatus = attributes['status'] as String? ?? 'ongoing';
-      final status = rawStatus == 'completed' ? 'completed' : 'ongoing';
+      final status = rawStatus == 'completed'
+          ? 'completed'
+          : (rawStatus == 'hiatus' ? 'coming_soon' : 'ongoing');
 
       // Authors
       final rels = itemData['relationships'] as List? ?? [];

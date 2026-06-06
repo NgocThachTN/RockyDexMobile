@@ -114,7 +114,12 @@ class CategoryComicsNotifier extends StateNotifier<CategoryComicsState> {
     }
 
     try {
-      final list = await _repository.getComicsByCategory(_categorySlug, page: targetPage);
+      final list = await _repository.getComicsByCategory(
+        _categorySlug,
+        page: targetPage,
+        status: state.selectedStatus,
+        year: state.selectedYear,
+      );
       state = state.copyWith(
         isLoading: false,
         isLoadMore: false,
