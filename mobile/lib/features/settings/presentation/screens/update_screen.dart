@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
@@ -155,20 +154,24 @@ class _UpdateScreenState extends State<UpdateScreen> with WidgetsBindingObserver
         return;
       }
 
-      final result = await OpenFile.open(
-        _apkPath,
-        type: 'application/vnd.android.package-archive',
-      );
+      // Use native FileProvider-based installer via MethodChannel
+      final result = await _channel.invokeMethod<bool>('installApk', {
+        'filePath': _apkPath,
+      });
 
-      if (result.type != ResultType.done) {
-        setState(() {
-          _errorMessage = 'Không thể mở trình cài đặt: ${result.message}\n\nHãy đảm bảo bạn đã cấp quyền cài đặt ứng dụng từ nguồn không xác định cho RockyDex.';
-        });
-      } else {
+      if (result == true) {
         setState(() {
           _errorMessage = null;
         });
+      } else {
+        setState(() {
+          _errorMessage = 'Không thể mở trình cài đặt.\n\nHãy đảm bảo bạn đã cấp quyền cài đặt ứng dụng từ nguồn không xác định cho RockyDex.';
+        });
       }
+    } on PlatformException catch (e) {
+      setState(() {
+        _errorMessage = 'Lỗi cài đặt: ${e.message}';
+      });
     } catch (e) {
       setState(() {
         _errorMessage = 'Lỗi khởi chạy cài đặt: $e';

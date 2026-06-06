@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -38,6 +40,31 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       routerConfig: router,
+      builder: (context, child) {
+        // Request notification permission on first build (Android 13+)
+        _requestNotificationPermission();
+        return child ?? const SizedBox.shrink();
+      },
     );
+  }
+
+  static bool _notificationPermissionRequested = false;
+
+  static void _requestNotificationPermission() {
+    if (_notificationPermissionRequested || !Platform.isAndroid) return;
+    _notificationPermissionRequested = true;
+
+    // Delay slightly to ensure the activity is fully ready
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      try {
+        const channel = MethodChannel('com.rockydex.mobile/install_permission');
+        final hasPermission = await channel.invokeMethod<bool>('checkNotificationPermission') ?? true;
+        if (!hasPermission) {
+          await channel.invokeMethod<bool>('requestNotificationPermission');
+        }
+      } catch (e) {
+        debugPrint('NotificationPermission: Error requesting permission: $e');
+      }
+    });
   }
 }
