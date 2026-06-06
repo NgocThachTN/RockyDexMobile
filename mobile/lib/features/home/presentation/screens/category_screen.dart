@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/providers/server_source_provider.dart';
 import '../home_notifier.dart';
 
 class CategoryScreen extends ConsumerStatefulWidget {
@@ -49,10 +50,62 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(homeProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeSource = ref.watch(serverSourceProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Thể Loại'),
+        title: PopupMenuButton<ServerSource>(
+          offset: const Offset(0, 40),
+          position: PopupMenuPosition.under,
+          tooltip: 'Chọn nguồn truyện',
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (source) {
+            ref.read(serverSourceProvider.notifier).setSource(source);
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: ServerSource.otruyen,
+              child: Row(
+                children: [
+                  Icon(Icons.layers_outlined, size: 18, color: AppColors.primaryBlue),
+                  SizedBox(width: 8),
+                  Text('OTruyen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: ServerSource.mangadex,
+              child: Row(
+                children: [
+                  Icon(Icons.dns_outlined, size: 18, color: AppColors.primaryBlue),
+                  SizedBox(width: 8),
+                  Text('MangaDex', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+          ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 22),
+              const SizedBox(width: 8),
+              Text(
+                activeSource == ServerSource.otruyen ? 'Thể Loại (OTruyen)' : 'Thể Loại (MangaDex)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  letterSpacing: 0.1,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.keyboard_arrow_down,
+                size: 18,
+                color: isDark ? Colors.white60 : Colors.black54,
+              ),
+            ],
+          ),
+        ),
         centerTitle: true,
         elevation: 0,
       ),

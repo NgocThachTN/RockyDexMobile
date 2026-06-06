@@ -33,8 +33,8 @@ function App() {
       });
   }, []);
 
-  const fallbackVersion = 'v1.0.11';
-  const fallbackDownloadUrl = 'https://github.com/NgocThachTN/RockyDexMobile/releases/download/v1.0.11/rockydex-v1.0.11.apk';
+  const fallbackVersion = 'v1.0.12';
+  const fallbackDownloadUrl = 'https://github.com/NgocThachTN/RockyDexMobile/releases/download/v1.0.12/rockydex-v1.0.12.apk';
 
   const currentVersion = release ? release.tag_name : fallbackVersion;
   const downloadUrl = release && release.assets.length > 0 
@@ -227,10 +227,10 @@ function App() {
             ) : (
               <div>
                 <div className="changelog-meta">
-                  <span>Tên file: rockydex-v1.0.11.apk</span>
-                  <span>Dung lượng: 54.2 MB</span>
+                  <span>Tên file: rockydex-v1.0.12.apk</span>
+                  <span>Dung lượng: 54.3 MB</span>
                 </div>
-                <p style={{ marginBottom: '8px' }}>Không thể tải nhật ký cập nhật trực tiếp. Dưới đây là các thay đổi chính trong v1.0.11:</p>
+                <p style={{ marginBottom: '8px' }}>Không thể tải nhật ký cập nhật trực tiếp. Dưới đây là các thay đổi chính trong v1.0.12:</p>
                 <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Tích hợp máy chủ truyện tranh MangaDex mới với hàng nghìn truyện quốc tế.</li>
                 <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Thêm menu thả xuống (dropdown) tại tiêu đề trang chủ để chọn máy chủ nguồn (OTruyen / MangaDex).</li>
                 <li style={{ marginLeft: '16px', marginBottom: '6px', listStyleType: 'square' }}>Tự động phân nhóm và hỗ trợ đọc cả chương tiếng Việt và tiếng Anh trên MangaDex.</li>
