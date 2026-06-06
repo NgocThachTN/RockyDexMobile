@@ -7,7 +7,6 @@ import '../../../../core/services/update_service.dart';
 import '../home_notifier.dart';
 import '../widgets/comic_grid_card.dart';
 import '../widgets/home_banner_carousel.dart';
-import '../widgets/home_filter_section.dart';
 import '../../../library/presentation/library_providers.dart';
 import '../../domain/comic_model.dart';
 
@@ -190,7 +189,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        // Banner Carousel & Filter Section (only visible when not filtering by category and at page 1)
+        // Banner Carousel (only visible when not filtering by category and at page 1)
         if (state.selectedCategorySlug.isEmpty && state.comics.isNotEmpty)
           SliverToBoxAdapter(
             child: Column(
@@ -198,9 +197,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
               children: [
                 const SizedBox(height: 12),
                 HomeBannerCarousel(featuredComics: state.comics),
-                const SizedBox(height: 16),
-                HomeFilterSection(state: state),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
               ],
             ),
           ),
