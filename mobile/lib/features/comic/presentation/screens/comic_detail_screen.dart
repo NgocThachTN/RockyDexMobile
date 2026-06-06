@@ -272,7 +272,7 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                       );
                                     } else {
                                       // Read First
-                                      final firstChapter = chaptersList.first;
+                                      final firstChapter = chaptersList.last;
                                       context.push(
                                         '/reader/${widget.slug}/${firstChapter.chapterSlug}',
                                         extra: {
