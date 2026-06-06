@@ -33,7 +33,7 @@ class HomeRepository {
     try {
       final response = await _otruyenApi.get(
         '${ApiConstants.pathList}/$type',
-        queryParameters: {'page': page, 'limit': 20},
+        queryParameters: {'page': page},
       );
       return _mapComicsResponse(response.data);
     } catch (e) {
@@ -64,7 +64,7 @@ class HomeRepository {
     try {
       final response = await _otruyenApi.get(
         '${ApiConstants.pathCategories}/$categorySlug',
-        queryParameters: {'page': page, 'limit': 20},
+        queryParameters: {'page': page},
       );
       return _mapComicsResponse(response.data);
     } catch (e) {
