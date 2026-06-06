@@ -15,15 +15,21 @@ class ComicGridCard extends StatelessWidget {
 
     final statusText = {
       'dang-phat-hanh': 'Đang phát hành',
+      'ongoing': 'Đang phát hành',
       'hoan-thanh': 'Hoàn thành',
+      'completed': 'Hoàn thành',
       'sap-ra-mat': 'Sắp ra mắt',
+      'coming_soon': 'Sắp ra mắt',
       'truyen-moi': 'Truyện mới',
     }[comic.status] ?? 'Đang phát hành';
 
     final statusColor = {
       'dang-phat-hanh': AppColors.primaryBlue,
+      'ongoing': AppColors.primaryBlue,
       'hoan-thanh': AppColors.success,
+      'completed': AppColors.success,
       'sap-ra-mat': Colors.orange,
+      'coming_soon': Colors.orange,
       'truyen-moi': Colors.purple,
     }[comic.status] ?? AppColors.primaryBlue;
 
