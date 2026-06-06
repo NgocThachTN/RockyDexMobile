@@ -13,6 +13,20 @@ class ComicGridCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final statusText = {
+      'dang-phat-hanh': 'Đang phát hành',
+      'hoan-thanh': 'Hoàn thành',
+      'sap-ra-mat': 'Sắp ra mắt',
+      'truyen-moi': 'Truyện mới',
+    }[comic.status] ?? 'Đang phát hành';
+
+    final statusColor = {
+      'dang-phat-hanh': AppColors.primaryBlue,
+      'hoan-thanh': AppColors.success,
+      'sap-ra-mat': Colors.orange,
+      'truyen-moi': Colors.purple,
+    }[comic.status] ?? AppColors.primaryBlue;
+
     return GestureDetector(
       onTap: () => context.push('/comic/${comic.slug}'),
       child: Container(
@@ -63,14 +77,11 @@ class ComicGridCard extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                         decoration: BoxDecoration(
-                          color: (comic.status == 'ongoing'
-                                  ? AppColors.primaryBlue
-                                  : AppColors.success)
-                              .withOpacity(0.85),
+                          color: statusColor.withOpacity(0.85),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          comic.status == 'ongoing' ? 'Đang ra' : 'Xong',
+                          statusText,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 9,

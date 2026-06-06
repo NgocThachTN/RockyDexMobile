@@ -30,6 +30,7 @@ class SearchRepository {
         queryParameters: {
           'keyword': keyword,
           'page': page,
+          'limit': 20,
         },
       );
 

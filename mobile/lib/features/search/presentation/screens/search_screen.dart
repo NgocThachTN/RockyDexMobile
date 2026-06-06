@@ -76,8 +76,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _showStatusFilterPicker(BuildContext context, SearchState state) {
     final statuses = [
       {'name': 'Mọi tình trạng', 'value': 'all'},
-      {'name': 'Đang tiến hành', 'value': 'ongoing'},
-      {'name': 'Hoàn thành', 'value': 'completed'},
+      {'name': 'Đang phát hành', 'value': 'dang-phat-hanh'},
+      {'name': 'Hoàn thành', 'value': 'hoan-thanh'},
+      {'name': 'Sắp ra mắt', 'value': 'sap-ra-mat'},
+      {'name': 'Truyện mới', 'value': 'truyen-moi'},
     ];
 
     _showPicker(
@@ -188,8 +190,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     final statusLabel = {
       'all': 'Mọi tình trạng',
-      'ongoing': 'Đang ra',
-      'completed': 'Hoàn thành',
+      'dang-phat-hanh': 'Đang phát hành',
+      'hoan-thanh': 'Hoàn thành',
+      'sap-ra-mat': 'Sắp ra mắt',
+      'truyen-moi': 'Truyện mới',
     }[state.selectedStatus]!;
 
     final yearLabel = {

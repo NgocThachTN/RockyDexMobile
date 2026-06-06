@@ -82,12 +82,12 @@ class ProfileScreen extends ConsumerWidget {
                     ListTile(
                       leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue),
                       title: const Text('Về RockyDex'),
-                      subtitle: const Text('Phiên bản v1.0.4'),
+                      subtitle: const Text('Phiên bản v1.0.5'),
                       onTap: () {
                         showAboutDialog(
                           context: context,
                           applicationName: 'RockyDex',
-                          applicationVersion: '1.0.4',
+                          applicationVersion: '1.0.5',
                           applicationIcon: const Icon(Icons.auto_stories, color: AppColors.primaryBlue, size: 40),
                           children: const [
                             Text('Ứng dụng đọc truyện tranh tối giản, nhanh chóng và mượt mà cho người dùng Việt Nam. Hợp phong thủy Xanh Dương - Xám. Dữ liệu lưu offline hoàn toàn.'),
