@@ -7,6 +7,7 @@ import '../../../../core/services/update_service.dart';
 import '../home_notifier.dart';
 import '../widgets/comic_grid_card.dart';
 import '../widgets/home_banner_carousel.dart';
+import '../widgets/home_filter_section.dart';
 import '../../../library/presentation/library_providers.dart';
 import '../../domain/comic_model.dart';
 
@@ -112,7 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
           controller: _tabController,
           dividerColor: Colors.transparent,
           tabs: const [
-            Tab(text: 'Mới cập nhật'),
+            Tab(text: 'Cập nhật'),
             Tab(text: 'Truyện mới'),
             Tab(text: 'Theo dõi'),
           ],
@@ -189,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
-        // Banner Carousel (only visible when not filtering by category and at page 1)
+        // Banner Carousel & Filter Section (only visible when not filtering by category and at page 1)
         if (state.selectedCategorySlug.isEmpty && state.comics.isNotEmpty)
           SliverToBoxAdapter(
             child: Column(
@@ -197,21 +198,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
               children: [
                 const SizedBox(height: 12),
                 HomeBannerCarousel(featuredComics: state.comics),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Text(
-                    state.selectedListType == ApiConstants.listFeatured
-                        ? 'Truyện Đề Xuất'
-                        : 'Mới Cập Nhật',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 16),
+                HomeFilterSection(state: state),
+                const SizedBox(height: 8),
               ],
             ),
           ),

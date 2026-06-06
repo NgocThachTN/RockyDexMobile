@@ -134,7 +134,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                   child: TextField(
                     controller: _searchController,
                     textAlignVertical: TextAlignVertical.center,
-                    style: const TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 14, height: 1.2),
                     decoration: InputDecoration(
                       hintText: 'Tìm nhanh thể loại...',
                       hintStyle: TextStyle(
@@ -143,7 +143,7 @@ class _CategoryScreenState extends ConsumerState<CategoryScreen> {
                       ),
                       border: InputBorder.none,
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                      contentPadding: EdgeInsets.zero,
                     ),
                     onChanged: (val) {
                       setState(() {

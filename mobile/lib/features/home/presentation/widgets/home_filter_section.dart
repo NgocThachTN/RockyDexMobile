@@ -14,67 +14,71 @@ class HomeFilterSection extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final listFilters = [
-      {'label': 'Nổi Bật', 'type': ApiConstants.listFeatured},
-      {'label': 'Mới Nhất', 'type': ApiConstants.listNew},
-      {'label': 'Đang Ra', 'type': ApiConstants.listOngoing},
-      {'label': 'Hoàn Thành', 'type': ApiConstants.listCompleted},
+      {'label': 'Cập nhật', 'type': ApiConstants.listNew},
+      {'label': 'Đề xuất', 'type': ApiConstants.listFeatured},
+      {'label': 'Đang phát hành', 'type': ApiConstants.listOngoing},
+      {'label': 'Hoàn thành', 'type': ApiConstants.listCompleted},
+      {'label': 'Sắp ra mắt', 'type': ApiConstants.listComingSoon},
     ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-      color: isDark ? const Color(0xFF121212) : const Color(0xFFF9F9F9),
-      child: Row(
-        children: listFilters.map((filter) {
-          final isSelected = state.selectedListType == filter['type'];
+    return SizedBox(
+      height: 36,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          children: listFilters.map((filter) {
+            final isSelected = state.selectedListType == filter['type'];
 
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: InkWell(
-                onTap: () {
-                  ref.read(homeProvider.notifier).selectListType(filter['type']!);
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  height: 32,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryBlue
-                        : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
+            return Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    ref.read(homeProvider.notifier).selectListType(filter['type']!);
+                  },
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primaryBlue
-                          : (isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.18)),
-                      width: 1,
+                          : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primaryBlue
+                            : (isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.18)),
+                        width: 1,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primaryBlue.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ]
+                          : null,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppColors.primaryBlue.withOpacity(0.3),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            )
-                          ]
-                        : null,
-                  ),
-                  child: Text(
-                    filter['label']!,
-                    style: TextStyle(
-                      color: isSelected
-                          ? Colors.white
-                          : (isDark ? Colors.white70 : Colors.black87),
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      fontSize: 12.5,
+                    child: Text(
+                      filter['label']!,
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : (isDark ? Colors.white70 : Colors.black87),
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

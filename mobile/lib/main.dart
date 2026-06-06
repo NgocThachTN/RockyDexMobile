@@ -43,7 +43,28 @@ class MyApp extends ConsumerWidget {
       builder: (context, child) {
         // Request notification permission on first build (Android 13+)
         _requestNotificationPermission();
-        return child ?? const SizedBox.shrink();
+        
+        final mediaQueryData = MediaQuery.of(context);
+        final screenWidth = mediaQueryData.size.width;
+        
+        // Optimize text scaling multiplier for small/compact devices (specifically 16:9 phones)
+        double scaleMultiplier = 1.0;
+        if (screenWidth < 360) {
+          scaleMultiplier = 0.90; // Scale down slightly on very small screens
+        } else if (screenWidth < 400) {
+          scaleMultiplier = 0.95; // Scale down slightly on compact screens
+        }
+
+        // Clamp the text scale factor to prevent overlap and awkward wrapping
+        final textScaler = mediaQueryData.textScaler.clamp(
+          minScaleFactor: 0.85 * scaleMultiplier,
+          maxScaleFactor: 1.15 * scaleMultiplier,
+        );
+
+        return MediaQuery(
+          data: mediaQueryData.copyWith(textScaler: textScaler),
+          child: child ?? const SizedBox.shrink(),
+        );
       },
     );
   }
