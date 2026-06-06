@@ -337,9 +337,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       body: Column(
         children: [
-          const Divider(height: 1),
           if (_searchController.text.isNotEmpty) _buildFilterBar(searchState),
-          if (_searchController.text.isNotEmpty) const Divider(height: 1),
           Expanded(
             child: _searchController.text.isEmpty && searchState.history.isNotEmpty
                 ? _buildSearchHistory(searchState.history)
