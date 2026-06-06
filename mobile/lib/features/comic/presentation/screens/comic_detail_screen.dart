@@ -19,10 +19,12 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
   bool _isChapterAscending = false; // default descending
 
   @override
+  @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(comicDetailProvider(widget.slug));
     final historyAsync = ref.watch(comicHistoryProvider(widget.slug));
     final favState = ref.watch(favoriteNotifierProvider(widget.slug));
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
 
     return Scaffold(
@@ -129,10 +131,11 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                   const SizedBox(height: 4),
                                   Text(
                                     comic.originName.join(', '),
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          fontStyle: FontStyle.italic,
-                                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
-                                        ),
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: isDark ? Colors.white70 : Colors.black87,
+                                    ),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -192,41 +195,49 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                         ],
                       ),
 
-                      // Genres (Clickable tags that navigate to the Category Details)
-                      const SizedBox(height: 16),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: comic.category.map((cat) {
-                          return Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {
-                                context.push('/categories/${cat.slug}', extra: cat.name);
-                              },
-                              borderRadius: BorderRadius.circular(20),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: Theme.of(context).dividerColor.withOpacity(0.8),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Text(
-                                  cat.name,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.9),
+                      // Genres (Horizontal scrollable tags)
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        height: 32,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: comic.category.length,
+                          itemBuilder: (context, index) {
+                            final cat = comic.category[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    context.push('/categories/${cat.slug}', extra: cat.name);
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF1F3F5),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.18),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Text(
+                                      cat.name,
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark ? Colors.white70 : Colors.black87,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          },
+                        ),
                       ),
 
                       // Actions: Read Buttons with Icons
@@ -432,22 +443,32 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                       )
                                     : null,
                                 trailing: isLastRead
-                                    ? Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryBlue.withOpacity(0.12),
-                                          borderRadius: BorderRadius.circular(6),
-                                          border: Border.all(color: AppColors.primaryBlue, width: 1),
-                                        ),
-                                        child: const Text(
-                                          'Đang đọc',
-                                          style: TextStyle(
-                                            color: AppColors.primaryBlue,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      )
+                                 ? Container(
+                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                   decoration: BoxDecoration(
+                                     color: comic.status == 'ongoing'
+                                         ? AppColors.primaryBlue.withOpacity(0.12)
+                                         : AppColors.success.withOpacity(0.12),
+                                     borderRadius: BorderRadius.circular(4),
+                                     border: Border.all(
+                                       color: comic.status == 'ongoing'
+                                           ? AppColors.primaryBlue.withOpacity(0.5)
+                                           : AppColors.success.withOpacity(0.5),
+                                       width: 1,
+                                     ),
+                                   ),
+                                   child: Text(
+                                     comic.status == 'ongoing' ? 'ĐANG RA' : 'HOÀN THÀNH',
+                                     style: TextStyle(
+                                       color: comic.status == 'ongoing'
+                                           ? AppColors.primaryBlue
+                                           : AppColors.success,
+                                       fontSize: 9,
+                                       fontWeight: FontWeight.bold,
+                                       letterSpacing: 0.5,
+                                     ),
+                                   ),
+                                 )
                                     : const Icon(Icons.chevron_right, size: 18),
                                 onTap: () {
                                   context.push(
