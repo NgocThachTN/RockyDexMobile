@@ -320,45 +320,56 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               width: 1,
             ),
           ),
-          child: TextField(
-            controller: _searchController,
-            textAlignVertical: TextAlignVertical.center,
-            style: const TextStyle(fontSize: 14),
-            decoration: InputDecoration(
-              hintText: 'Tìm kiếm truyện...',
-              hintStyle: TextStyle(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
-                fontSize: 14,
+          child: Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 12, right: 8),
+                child: Icon(
+                  Icons.search_rounded,
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  size: 20,
+                ),
               ),
-              prefixIcon: Icon(
-                Icons.search_rounded,
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                size: 20,
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  textAlignVertical: TextAlignVertical.center,
+                  style: const TextStyle(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Tìm kiếm truyện...',
+                    hintStyle: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                      fontSize: 14,
+                    ),
+                    border: InputBorder.none,
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                  onChanged: (val) {
+                    setState(() {}); // refresh clear button
+                    if (_debounce?.isActive ?? false) _debounce!.cancel();
+                    _debounce = Timer(const Duration(milliseconds: 500), () {
+                      ref.read(searchProvider.notifier).search(val, saveToHistory: false);
+                    });
+                  },
+                  onSubmitted: _submitSearch,
+                  textInputAction: TextInputAction.search,
+                ),
               ),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 18),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      onPressed: () {
-                        _searchController.clear();
-                        ref.read(searchProvider.notifier).search('', saveToHistory: false);
-                        setState(() {});
-                      },
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-            ),
-            onChanged: (val) {
-              setState(() {}); // refresh clear button
-              if (_debounce?.isActive ?? false) _debounce!.cancel();
-              _debounce = Timer(const Duration(milliseconds: 500), () {
-                ref.read(searchProvider.notifier).search(val, saveToHistory: false);
-              });
-            },
-            onSubmitted: _submitSearch,
-            textInputAction: TextInputAction.search,
+              if (_searchController.text.isNotEmpty) ...[
+                IconButton(
+                  icon: const Icon(Icons.clear_rounded, size: 18),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () {
+                    _searchController.clear();
+                    ref.read(searchProvider.notifier).search('', saveToHistory: false);
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(width: 10),
+              ],
+            ],
           ),
         ),
       ),

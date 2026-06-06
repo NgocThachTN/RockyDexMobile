@@ -17,22 +17,22 @@ class AppTheme {
         surface: AppColors.bgLightCard,
         error: AppColors.error,
       ),
-      textTheme: GoogleFonts.outfitTextTheme().copyWith(
-        titleLarge: GoogleFonts.outfit(
+      textTheme: GoogleFonts.interTextTheme().copyWith(
+        titleLarge: GoogleFonts.inter(
           color: AppColors.textLightPrimary,
           fontWeight: FontWeight.bold,
           fontSize: 20,
         ),
-        titleMedium: GoogleFonts.outfit(
+        titleMedium: GoogleFonts.inter(
           color: AppColors.textLightPrimary,
           fontWeight: FontWeight.w600,
           fontSize: 16,
         ),
-        bodyLarge: GoogleFonts.outfit(
+        bodyLarge: GoogleFonts.inter(
           color: AppColors.textLightPrimary,
           fontSize: 15,
         ),
-        bodyMedium: GoogleFonts.outfit(
+        bodyMedium: GoogleFonts.inter(
           color: AppColors.textLightSecondary,
           fontSize: 13,
         ),
@@ -42,7 +42,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textLightPrimary),
-        titleTextStyle: GoogleFonts.outfit(
+        titleTextStyle: GoogleFonts.inter(
           color: AppColors.textLightPrimary,
           fontWeight: FontWeight.bold,
           fontSize: 20,
@@ -78,22 +78,22 @@ class AppTheme {
         surface: AppColors.bgDarkCard,
         error: AppColors.error,
       ),
-      textTheme: GoogleFonts.outfitTextTheme().copyWith(
-        titleLarge: GoogleFonts.outfit(
+      textTheme: GoogleFonts.interTextTheme().copyWith(
+        titleLarge: GoogleFonts.inter(
           color: AppColors.textDarkPrimary,
           fontWeight: FontWeight.bold,
           fontSize: 20,
         ),
-        titleMedium: GoogleFonts.outfit(
+        titleMedium: GoogleFonts.inter(
           color: AppColors.textDarkPrimary,
           fontWeight: FontWeight.w600,
           fontSize: 16,
         ),
-        bodyLarge: GoogleFonts.outfit(
+        bodyLarge: GoogleFonts.inter(
           color: AppColors.textDarkPrimary,
           fontSize: 15,
         ),
-        bodyMedium: GoogleFonts.outfit(
+        bodyMedium: GoogleFonts.inter(
           color: AppColors.textDarkSecondary,
           fontSize: 13,
         ),
@@ -103,7 +103,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         iconTheme: const IconThemeData(color: AppColors.textDarkPrimary),
-        titleTextStyle: GoogleFonts.outfit(
+        titleTextStyle: GoogleFonts.inter(
           color: AppColors.textDarkPrimary,
           fontWeight: FontWeight.bold,
           fontSize: 20,
