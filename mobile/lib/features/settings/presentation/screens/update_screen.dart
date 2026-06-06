@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:go_router/go_router.dart';
@@ -24,6 +25,8 @@ class UpdateScreen extends StatefulWidget {
 }
 
 class _UpdateScreenState extends State<UpdateScreen> {
+  static const _channel = MethodChannel('com.rockydex.mobile/install_permission');
+
   double _progress = 0.0;
   bool _isDownloading = false;
   bool _isCompleted = false;
@@ -84,6 +87,28 @@ class _UpdateScreenState extends State<UpdateScreen> {
     if (_apkPath.isEmpty) return;
 
     try {
+      // Check installation permission on Android
+      bool hasPermission = true;
+      try {
+        hasPermission = await _channel.invokeMethod<bool>('checkInstallPermission') ?? true;
+      } catch (e) {
+        // Fallback for non-Android platforms or channel errors
+      }
+
+      if (!hasPermission) {
+        setState(() {
+          _errorMessage = 'Ứng dụng cần quyền cài đặt nguồn không xác định. Vui lòng bật quyền cài đặt cho RockyDex trong cài đặt hệ thống vừa mở ra.';
+        });
+
+        // Request permission (opens Settings page for user to toggle)
+        try {
+          await _channel.invokeMethod('requestInstallPermission');
+        } catch (e) {
+          // Ignore settings launch failure
+        }
+        return;
+      }
+
       final result = await OpenFile.open(
         _apkPath,
         type: 'application/vnd.android.package-archive',
@@ -92,6 +117,10 @@ class _UpdateScreenState extends State<UpdateScreen> {
       if (result.type != ResultType.done) {
         setState(() {
           _errorMessage = 'Không thể mở trình cài đặt: ${result.message}\n\nHãy đảm bảo bạn đã cấp quyền cài đặt ứng dụng từ nguồn không xác định cho RockyDex.';
+        });
+      } else {
+        setState(() {
+          _errorMessage = null;
         });
       }
     } catch (e) {
