@@ -22,7 +22,8 @@ func (r *PgUserRepository) Create(user *domain.User) error {
 			return err
 		}
 		profile := domain.Profile{
-			UserID: user.ID,
+			UserID:    user.ID,
+			AvatarURL: user.Profile.AvatarURL,
 		}
 		return tx.Create(&profile).Error
 	})

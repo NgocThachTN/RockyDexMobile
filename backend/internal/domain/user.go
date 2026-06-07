@@ -5,13 +5,15 @@ import (
 )
 
 type User struct {
-	ID           string    `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	Email        string    `json:"email" gorm:"uniqueIndex;not null"`
-	PasswordHash string    `json:"-" gorm:"not null"`
-	Name         string    `json:"name"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Profile      Profile   `json:"profile" gorm:"foreignKey:UserID"`
+	ID                   string    `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	Email                string    `json:"email" gorm:"uniqueIndex;not null"`
+	PasswordHash         string    `json:"-" gorm:"not null"`
+	Name                 string    `json:"name"`
+	CreatedAt            time.Time `json:"created_at"`
+	UpdatedAt            time.Time `json:"updated_at"`
+	Profile              Profile   `json:"profile" gorm:"foreignKey:UserID"`
+	PasswordResetToken   string    `json:"-"`
+	PasswordResetExpires time.Time `json:"-"`
 }
 
 type Profile struct {
