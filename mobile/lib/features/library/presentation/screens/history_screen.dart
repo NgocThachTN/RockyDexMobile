@@ -132,14 +132,55 @@ class HistoryScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        // Play / Resume Button
-                        IconButton(
-                          icon: const Icon(Icons.play_circle_outline, color: AppColors.primaryBlue, size: 30),
-                          onPressed: () {
-                            // Open details screen to load full server configurations
-                            context.push('/comic/$slug');
-                          },
+                        // Action Buttons
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.play_circle_outline, color: AppColors.primaryBlue, size: 28),
+                              onPressed: () {
+                                context.push('/comic/$slug');
+                              },
+                              tooltip: 'Đọc tiếp',
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete_outline, color: Colors.grey[500], size: 24),
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Xóa lịch sử'),
+                                    content: Text('Bạn có chắc chắn muốn xóa "$name" khỏi lịch sử đọc không?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, false),
+                                        child: const Text('Hủy'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context, true),
+                                        style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                                        child: const Text('Xóa'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (confirm == true) {
+                                  await LocalStorage.deleteHistory(slug);
+                                  ref.invalidate(libraryHistoryProvider);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Đã xóa "$name" khỏi lịch sử'),
+                                        duration: const Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                              tooltip: 'Xóa khỏi lịch sử',
+                            ),
+                          ],
                         ),
                       ],
                     ),

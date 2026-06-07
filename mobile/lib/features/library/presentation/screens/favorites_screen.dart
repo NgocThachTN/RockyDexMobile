@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:mobile/core/constants/colors.dart';
+import 'package:mobile/core/storage/local_storage.dart';
 import '../library_providers.dart';
 
 class FavoritesScreen extends ConsumerWidget {
@@ -47,27 +49,85 @@ class FavoritesScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Theme.of(context).dividerColor, width: 1),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(9),
-                            child: CachedNetworkImage(
-                              imageUrl: thumb,
-                              fit: BoxFit.cover,
-                              width: double.infinity,
-                              fadeInDuration: const Duration(milliseconds: 250),
-                              placeholder: (context, url) => Container(
-                                color: Theme.of(context).cardColor,
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                color: Theme.of(context).cardColor,
-                                child: const Icon(Icons.broken_image),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Theme.of(context).dividerColor, width: 1),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(9),
+                                  child: CachedNetworkImage(
+                                    imageUrl: thumb,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    fadeInDuration: const Duration(milliseconds: 250),
+                                    placeholder: (context, url) => Container(
+                                      color: Theme.of(context).cardColor,
+                                    ),
+                                    errorWidget: (context, url, error) => Container(
+                                      color: Theme.of(context).cardColor,
+                                      child: const Icon(Icons.broken_image),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            // Floating Unfavorite Button
+                            Positioned(
+                              top: 6,
+                              right: 6,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  final confirm = await showDialog<bool>(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Bỏ yêu thích'),
+                                      content: Text('Bạn có chắc chắn muốn bỏ yêu thích truyện "$name" không?'),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, false),
+                                          child: const Text('Hủy'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () => Navigator.pop(context, true),
+                                          style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                                          child: const Text('Bỏ thích'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  if (confirm == true) {
+                                    await LocalStorage.deleteFavorite(slug);
+                                    ref.invalidate(libraryFavoritesProvider);
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Đã bỏ yêu thích "$name"'),
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.6),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.favorite,
+                                    color: Colors.red,
+                                    size: 14,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 6),

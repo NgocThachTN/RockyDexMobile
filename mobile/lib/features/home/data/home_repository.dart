@@ -38,7 +38,7 @@ class HomeRepository {
             'includes[]': ['cover_art', 'author'],
           },
         );
-        return _mapMangaDexComicsResponse(response.data);
+        return await _mapMangaDexComicsResponse(response.data);
       } catch (e) {
         throw Exception('Không thể tải truyện trang chủ MangaDex: $e');
       }
@@ -81,7 +81,7 @@ class HomeRepository {
           '/manga',
           queryParameters: queryParams,
         );
-        return _mapMangaDexComicsResponse(response.data);
+        return await _mapMangaDexComicsResponse(response.data);
       } catch (e) {
         throw Exception('Không thể tải danh sách truyện MangaDex: $e');
       }
@@ -166,7 +166,7 @@ class HomeRepository {
           '/manga',
           queryParameters: queryParams,
         );
-        return _mapMangaDexComicsResponse(response.data);
+        return await _mapMangaDexComicsResponse(response.data);
       } catch (e) {
         throw Exception('Không thể tải danh sách truyện theo thể loại MangaDex: $e');
       }
@@ -207,13 +207,56 @@ class HomeRepository {
     }).toList();
   }
 
-  List<ComicModel> _mapMangaDexComicsResponse(dynamic rawResponseData) {
+  Future<List<ComicModel>> _mapMangaDexComicsResponse(dynamic rawResponseData) async {
     var responseData = rawResponseData;
     if (responseData is String) {
       responseData = jsonDecode(responseData);
     }
 
     final items = responseData['data'] as List? ?? [];
+    if (items.isEmpty) return [];
+
+    // Collect latest uploaded chapter IDs
+    final List<String> latestChapterIds = [];
+    final Map<String, String> mangaToChapterId = {};
+
+    for (final item in items) {
+      final id = item['id'] as String? ?? '';
+      final attributes = item['attributes'] as Map<String, dynamic>? ?? {};
+      final latestChapterId = attributes['latestUploadedChapter'] as String? ?? '';
+      if (latestChapterId.isNotEmpty) {
+        latestChapterIds.add(latestChapterId);
+        mangaToChapterId[id] = latestChapterId;
+      }
+    }
+
+    // Fetch chapter details for these IDs in one request
+    final Map<String, String> chapterIdToName = {};
+    if (latestChapterIds.isNotEmpty) {
+      try {
+        final response = await _mangadexApi.get(
+          '/chapter',
+          queryParameters: {
+            'ids[]': latestChapterIds,
+            'limit': 100,
+          },
+        );
+        final chapsData = response.data;
+        final chapsList = chapsData['data'] as List? ?? [];
+        for (final chap in chapsList) {
+          final chapId = chap['id'] as String? ?? '';
+          final chapAttrs = chap['attributes'] as Map<String, dynamic>? ?? {};
+          final chapNum = chapAttrs['chapter'] as String? ?? '';
+          if (chapId.isNotEmpty && chapNum.isNotEmpty) {
+            chapterIdToName[chapId] = chapNum;
+          }
+        }
+      } catch (e) {
+        // Silently catch errors so the main request doesn't fail
+        print('Error fetching MangaDex chapter details: $e');
+      }
+    }
+
     return items.map((item) {
       final id = item['id'] as String? ?? '';
       final attributes = item['attributes'] as Map<String, dynamic>? ?? {};
@@ -267,6 +310,23 @@ class HomeRepository {
 
       final updatedAt = attributes['updatedAt'] as String? ?? '';
 
+      // Get chapter summary if available
+      List<ChapterSummaryModel>? chaptersLatest;
+      final targetChapterId = mangaToChapterId[id];
+      if (targetChapterId != null) {
+        final chapNum = chapterIdToName[targetChapterId];
+        if (chapNum != null && chapNum.isNotEmpty) {
+          chaptersLatest = [
+            ChapterSummaryModel(
+              filename: '',
+              chapterName: chapNum,
+              chapterTitle: '',
+              chapterApiData: '',
+            ),
+          ];
+        }
+      }
+
       return ComicModel(
         id: id,
         name: name,
@@ -276,6 +336,7 @@ class HomeRepository {
         thumbUrl: thumbUrl,
         category: cats,
         updatedAt: updatedAt,
+        chaptersLatest: chaptersLatest,
       );
     }).toList();
   }

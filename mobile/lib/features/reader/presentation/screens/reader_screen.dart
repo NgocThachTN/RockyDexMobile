@@ -599,8 +599,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     final chaptersList = server != null ? server.serverData : <ChapterModel>[];
                     final currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
                     
-                    final hasPrev = currentIdx > 0;
-                    final hasNext = currentIdx != -1 && currentIdx < chaptersList.length - 1;
+                    // Note: chaptersList is ordered from newest to oldest.
+                    // Previous chapter is older (higher index in the list).
+                    // Next chapter is newer (lower index in the list).
+                    final hasPrev = currentIdx != -1 && currentIdx < chaptersList.length - 1;
+                    final hasNext = currentIdx > 0;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12.0),
@@ -611,7 +614,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             child: OutlinedButton.icon(
                               onPressed: hasPrev
                                   ? () {
-                                      final prevChap = chaptersList[currentIdx - 1];
+                                      final prevChap = chaptersList[currentIdx + 1];
                                       context.pushReplacement(
                                         '/reader/${widget.comicSlug}/${prevChap.chapterSlug}',
                                         extra: {
@@ -644,7 +647,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             child: ElevatedButton.icon(
                               onPressed: hasNext
                                   ? () {
-                                      final nextChap = chaptersList[currentIdx + 1];
+                                      final nextChap = chaptersList[currentIdx - 1];
                                       context.pushReplacement(
                                         '/reader/${widget.comicSlug}/${nextChap.chapterSlug}',
                                         extra: {

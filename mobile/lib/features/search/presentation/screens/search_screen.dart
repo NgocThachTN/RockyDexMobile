@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
+import '../../../../core/providers/server_source_provider.dart';
 import '../../../home/presentation/widgets/comic_grid_card.dart';
 import '../search_notifier.dart';
 
@@ -306,6 +307,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final searchState = ref.watch(searchProvider);
+    final activeSource = ref.watch(serverSourceProvider);
+    final sourceName = activeSource == ServerSource.otruyen ? 'OTruyen' : 'MangaDex';
 
     return Scaffold(
       appBar: AppBar(
@@ -336,7 +339,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   textAlignVertical: TextAlignVertical.center,
                   style: const TextStyle(fontSize: 14, height: 1.2),
                   decoration: InputDecoration(
-                    hintText: 'Tìm kiếm truyện...',
+                    hintText: 'Tìm kiếm truyện trong $sourceName...',
                     hintStyle: TextStyle(
                       color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
                       fontSize: 14,

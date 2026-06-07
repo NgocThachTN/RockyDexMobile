@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/constants/colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,29 +11,72 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoOpacity;
+  late Animation<double> _glowOpacity;
+  late Animation<Offset> _titleSlide;
+  late Animation<double> _titleOpacity;
+  late Animation<double> _subtitleOpacity;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 2),
+      duration: const Duration(milliseconds: 2200),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    // Logo animates first: scale and fade in
+    _logoScale = Tween<double>(begin: 0.4, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+      ),
+    );
+    _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      ),
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
+    // Soft glow pulse background animation
+    _glowOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeInOut),
+      ),
+    );
+
+    // Title slides up slightly and fades in
+    _titleSlide = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
+      ),
+    );
+    _titleOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.3, 0.7, curve: Curves.easeIn),
+      ),
+    );
+
+    // Subtitle fades in last
+    _subtitleOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.5, 1.0, curve: Curves.easeIn),
+      ),
     );
 
     _controller.forward();
 
     // Navigate to home after delay
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(milliseconds: 3200), () {
       if (mounted) {
         context.go('/home');
       }
@@ -48,49 +92,151 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final primaryColor = Theme.of(context).primaryColor;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Uses app theme background
-      body: Center(
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (context, child) {
-            return FadeTransition(
-              opacity: _fadeAnimation,
-              child: ScaleTransition(
-                scale: _scaleAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/images/app_icon.png',
-                      width: 120,
-                      height: 120,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'RockyDex',
-                      style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor, // Uses primary brand color
-                        letterSpacing: 2.0,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Thế giới Manga trong tầm tay',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: isDark ? Colors.grey[400] : Colors.grey[700],
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark
+                ? [
+                    const Color(0xFF0F172A), // Deep Slate Blue-Gray
+                    AppColors.bgDark,       // Deep Charcoal-Gray
+                  ]
+                : [
+                    const Color(0xFFE8F0FE), // Very light primary blue tint
+                    AppColors.bgLight,      // Light Cool Gray
                   ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Decorative background glowing circle
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: primaryColor.withOpacity(isDark ? 0.06 : 0.04),
                 ),
               ),
-            );
-          },
+            ),
+            Center(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo stack with soft glowing background
+                      Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Glowing backdrop
+                          FadeTransition(
+                            opacity: _glowOpacity,
+                            child: Container(
+                              width: 160,
+                              height: 160,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    primaryColor.withOpacity(isDark ? 0.25 : 0.18),
+                                    primaryColor.withOpacity(0.0),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          // Transparent Logo
+                          FadeTransition(
+                            opacity: _logoOpacity,
+                            child: ScaleTransition(
+                              scale: _logoScale,
+                              child: Hero(
+                                tag: 'app_logo',
+                                child: Image.asset(
+                                  'assets/images/app_icon.png',
+                                  width: 130,
+                                  height: 130,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                      // App Title
+                      FadeTransition(
+                        opacity: _titleOpacity,
+                        child: SlideTransition(
+                          position: _titleSlide,
+                          child: Text(
+                            'RockyDex',
+                            style: TextStyle(
+                              fontSize: 42,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                              letterSpacing: 3.0,
+                              shadows: [
+                                Shadow(
+                                  color: primaryColor.withOpacity(0.3),
+                                  offset: const Offset(0, 4),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      // Subtitle
+                      FadeTransition(
+                        opacity: _subtitleOpacity,
+                        child: Text(
+                          'Thế giới Manga trong tầm tay',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                            fontStyle: FontStyle.italic,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            // Footer/Version info
+            Positioned(
+              bottom: 24,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: FadeTransition(
+                  opacity: _subtitleOpacity,
+                  child: Text(
+                    'v1.1.2',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? AppColors.textDarkSecondary.withOpacity(0.4)
+                          : AppColors.textLightSecondary.withOpacity(0.4),
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
