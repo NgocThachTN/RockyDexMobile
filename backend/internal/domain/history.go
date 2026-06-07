@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -14,6 +15,36 @@ type History struct {
 	ChapterName     string    `json:"chapter_name" gorm:"not null"`
 	ProgressPercent int       `json:"progress_percent" gorm:"default:0"` // 0 to 100
 	LastReadAt      time.Time `json:"last_read_at"`
+}
+
+// UnmarshalJSON customizes unmarshaling to accept both local DB keys (slug, name, thumb_url)
+// and standard backend keys (comic_slug, comic_name, comic_thumb).
+func (h *History) UnmarshalJSON(data []byte) error {
+	type Alias History
+	aux := &struct {
+		Slug     string `json:"slug"`
+		Name     string `json:"name"`
+		ThumbURL string `json:"thumb_url"`
+		*Alias
+	}{
+		Alias: (*Alias)(h),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	if h.ComicSlug == "" && aux.Slug != "" {
+		h.ComicSlug = aux.Slug
+	}
+	if h.ComicName == "" && aux.Name != "" {
+		h.ComicName = aux.Name
+	}
+	if h.ComicThumb == "" && aux.ThumbURL != "" {
+		h.ComicThumb = aux.ThumbURL
+	}
+
+	return nil
 }
 
 type HistoryRepository interface {
