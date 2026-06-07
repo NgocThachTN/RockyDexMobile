@@ -9,11 +9,10 @@ import (
 	"net/http"
 	"time"
 
+	"rockydex-api/internal/application/dto"
 	"rockydex-api/internal/domain"
 	"rockydex-api/internal/shared/config"
-
-	"github.com/golang-jwt/jwt/v5"
-	"golang.org/x/crypto/bcrypt"
+	"rockydex-api/internal/shared/utils"
 )
 
 type AuthService struct {
@@ -21,46 +20,11 @@ type AuthService struct {
 	cfg      *config.Config
 }
 
-type RegisterInput struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
-	Name     string `json:"name" binding:"required"`
-}
-
-type LoginInput struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
-type GoogleLoginInput struct {
-	IDToken string `json:"id_token" binding:"required"`
-}
-
-type ForgotPasswordInput struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
-type ResetPasswordInput struct {
-	Email       string `json:"email" binding:"required,email"`
-	Token       string `json:"token" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=6"`
-}
-
-type AuthResponse struct {
-	Token string       `json:"token"`
-	User  *domain.User `json:"user"`
-}
-
-type JWTRefreshClaims struct {
-	UserID string `json:"user_id"`
-	jwt.RegisteredClaims
-}
-
 func NewAuthService(userRepo domain.UserRepository, cfg *config.Config) *AuthService {
 	return &AuthService{userRepo: userRepo, cfg: cfg}
 }
 
-func (s *AuthService) Register(input RegisterInput) (*AuthResponse, error) {
+func (s *AuthService) Register(input dto.RegisterInput) (*dto.AuthResponse, error) {
 	existing, err := s.userRepo.GetByEmail(input.Email)
 	if err != nil {
 		return nil, err
@@ -69,14 +33,14 @@ func (s *AuthService) Register(input RegisterInput) (*AuthResponse, error) {
 		return nil, errors.New("email already registered")
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
 		return nil, err
 	}
 
 	user := &domain.User{
 		Email:        input.Email,
-		PasswordHash: string(hashedPassword),
+		PasswordHash: hashedPassword,
 		Name:         input.Name,
 	}
 
@@ -84,7 +48,7 @@ func (s *AuthService) Register(input RegisterInput) (*AuthResponse, error) {
 		return nil, err
 	}
 
-	token, err := s.generateToken(user.ID)
+	token, err := utils.GenerateToken(user.ID, s.cfg.JWTExpiryHours, s.cfg.JWTSecret)
 	if err != nil {
 		return nil, err
 	}
@@ -92,13 +56,13 @@ func (s *AuthService) Register(input RegisterInput) (*AuthResponse, error) {
 	// Fetch full details (profile loaded)
 	fullUser, _ := s.userRepo.GetByID(user.ID)
 
-	return &AuthResponse{
+	return &dto.AuthResponse{
 		Token: token,
 		User:  fullUser,
 	}, nil
 }
 
-func (s *AuthService) Login(input LoginInput) (*AuthResponse, error) {
+func (s *AuthService) Login(input dto.LoginInput) (*dto.AuthResponse, error) {
 	user, err := s.userRepo.GetByEmail(input.Email)
 	if err != nil {
 		return nil, err
@@ -107,23 +71,23 @@ func (s *AuthService) Login(input LoginInput) (*AuthResponse, error) {
 		return nil, errors.New("invalid email or password")
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password))
+	err = utils.ComparePassword(user.PasswordHash, input.Password)
 	if err != nil {
 		return nil, errors.New("invalid email or password")
 	}
 
-	token, err := s.generateToken(user.ID)
+	token, err := utils.GenerateToken(user.ID, s.cfg.JWTExpiryHours, s.cfg.JWTSecret)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AuthResponse{
+	return &dto.AuthResponse{
 		Token: token,
 		User:  user,
 	}, nil
 }
 
-func (s *AuthService) LoginGoogle(idToken string) (*AuthResponse, error) {
+func (s *AuthService) LoginGoogle(idToken string) (*dto.AuthResponse, error) {
 	// 1. Call Google TokenInfo endpoint to verify the ID Token
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get("https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken)
@@ -164,15 +128,15 @@ func (s *AuthService) LoginGoogle(idToken string) (*AuthResponse, error) {
 	if user == nil {
 		// Register a new user with Google details
 		// Generate a secure random password since Google login is passwordless
-		randomPassword := generateRandomString(32)
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(randomPassword), bcrypt.DefaultCost)
+		randomPassword := utils.GenerateRandomString(32)
+		hashedPassword, err := utils.HashPassword(randomPassword)
 		if err != nil {
 			return nil, err
 		}
 
 		user = &domain.User{
 			Email:        info.Email,
-			PasswordHash: string(hashedPassword),
+			PasswordHash: hashedPassword,
 			Name:         info.Name,
 			Profile: domain.Profile{
 				AvatarURL: info.Picture,
@@ -202,12 +166,12 @@ func (s *AuthService) LoginGoogle(idToken string) (*AuthResponse, error) {
 	}
 
 	// 3. Generate JWT Token
-	token, err := s.generateToken(user.ID)
+	token, err := utils.GenerateToken(user.ID, s.cfg.JWTExpiryHours, s.cfg.JWTSecret)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AuthResponse{
+	return &dto.AuthResponse{
 		Token: token,
 		User:  user,
 	}, nil
@@ -256,52 +220,18 @@ func (s *AuthService) ResetPassword(email string, token string, newPassword stri
 		return errors.New("reset token has expired")
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	hashedPassword, err := utils.HashPassword(newPassword)
 	if err != nil {
 		return err
 	}
 
-	user.PasswordHash = string(hashedPassword)
+	user.PasswordHash = hashedPassword
 	user.PasswordResetToken = ""
 	user.PasswordResetExpires = time.Time{}
 
 	return s.userRepo.Update(user)
 }
 
-func (s *AuthService) generateToken(userID string) (string, error) {
-	claims := JWTRefreshClaims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(s.cfg.JWTExpiryHours) * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.cfg.JWTSecret))
-}
-
 func (s *AuthService) ValidateToken(tokenString string) (string, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &JWTRefreshClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(s.cfg.JWTSecret), nil
-	})
-	if err != nil {
-		return "", err
-	}
-
-	if claims, ok := token.Claims.(*JWTRefreshClaims); ok && token.Valid {
-		return claims.UserID, nil
-	}
-
-	return "", errors.New("invalid token")
-}
-
-func generateRandomString(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+"
-	result := make([]byte, length)
-	for i := range result {
-		num, _ := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
-		result[i] = charset[num.Int64()]
-	}
-	return string(result)
+	return utils.ValidateToken(tokenString, s.cfg.JWTSecret)
 }

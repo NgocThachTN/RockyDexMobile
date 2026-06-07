@@ -17,6 +17,7 @@ type Config struct {
 	DBPassword     string
 	DBName         string
 	DBSSLMode      string
+	DatabaseURL    string
 	RedisHost      string
 	RedisPort      string
 	RedisPassword  string
@@ -44,6 +45,7 @@ func LoadConfig() *Config {
 		DBPassword:     getEnv("DB_PASSWORD", "postgres"),
 		DBName:         getEnv("DB_NAME", "rockydex"),
 		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
+		DatabaseURL:    getEnv("DATABASE_URL", ""),
 		RedisHost:      getEnv("REDIS_HOST", "localhost"),
 		RedisPort:      getEnv("REDIS_PORT", "6379"),
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),

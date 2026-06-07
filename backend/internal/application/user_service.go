@@ -3,6 +3,7 @@ package application
 import (
 	"errors"
 
+	"rockydex-api/internal/application/dto"
 	"rockydex-api/internal/domain"
 )
 
@@ -10,19 +11,6 @@ type UserService struct {
 	userRepo domain.UserRepository
 	histRepo domain.HistoryRepository
 	favRepo  domain.FavoriteRepository
-}
-
-type UpdateProfileInput struct {
-	AvatarURL         *string  `json:"avatar_url"`
-	ThemePreference   *string  `json:"theme_preference"`
-	ReadingLayout     *string  `json:"reading_layout"`
-	ReadingBrightness *float64 `json:"reading_brightness"`
-}
-
-type ReadingStats struct {
-	TotalComicsRead int `json:"total_comics_read"`
-	TotalFavorites  int `json:"total_favorites"`
-	ChaptersRead    int `json:"chapters_read"` // calculated from number of history records as a mock/aggregator
 }
 
 func NewUserService(userRepo domain.UserRepository, histRepo domain.HistoryRepository, favRepo domain.FavoriteRepository) *UserService {
@@ -40,7 +28,7 @@ func (s *UserService) GetProfile(userID string) (*domain.User, error) {
 	return user, nil
 }
 
-func (s *UserService) UpdateProfile(userID string, input UpdateProfileInput) (*domain.Profile, error) {
+func (s *UserService) UpdateProfile(userID string, input dto.UpdateProfileInput) (*domain.Profile, error) {
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return nil, err
@@ -70,7 +58,7 @@ func (s *UserService) UpdateProfile(userID string, input UpdateProfileInput) (*d
 	return profile, nil
 }
 
-func (s *UserService) GetReadingStats(userID string) (*ReadingStats, error) {
+func (s *UserService) GetReadingStats(userID string) (*dto.ReadingStats, error) {
 	history, err := s.histRepo.GetList(userID)
 	if err != nil {
 		return nil, err
@@ -88,10 +76,10 @@ func (s *UserService) GetReadingStats(userID string) (*ReadingStats, error) {
 	totalChapters := 0
 	for _, h := range history {
 		// Mock estimation: assume average of 10 chapters read per history item, or simply use 1 for each
-		totalChapters += 1
+		totalChapters += h.ProgressPercent/10 + 1 // estimation helper
 	}
 
-	return &ReadingStats{
+	return &dto.ReadingStats{
 		TotalComicsRead: len(history),
 		TotalFavorites:  len(favorites),
 		ChaptersRead:    totalChapters,

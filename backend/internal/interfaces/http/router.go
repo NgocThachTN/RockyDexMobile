@@ -6,7 +6,11 @@ import (
 	"rockydex-api/internal/application"
 	"rockydex-api/internal/interfaces/http/middleware"
 
+	_ "rockydex-api/docs"
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRouter(
@@ -33,6 +37,9 @@ func SetupRouter(
 	authHandler := NewAuthHandler(authService)
 	userHandler := NewUserHandler(userService)
 	libHandler := NewLibraryHandler(libService)
+
+	// Swagger UI
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	api := r.Group("/api")
 	{
