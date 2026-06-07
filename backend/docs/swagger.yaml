@@ -4,7 +4,6 @@ description: Backend API for RockyDex Mobile App, supporting user authentication
   title: RockyDex API
   contact: {}
   version: 1.1.2
-host: "localhost:8080"
 basePath: /api
 securityDefinitions:
 BearerAuth:

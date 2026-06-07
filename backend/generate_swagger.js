@@ -9,7 +9,6 @@ const swaggerObj = {
     "contact": {},
     "version": "1.1.2"
   },
-  "host": "localhost:8080",
   "basePath": "/api",
   "securityDefinitions": {
     "BearerAuth": {
@@ -930,7 +929,7 @@ const docTemplate = \`{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.1.2",
-	Host:             "localhost:8080",
+	Host:             "",
 	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "RockyDex API",

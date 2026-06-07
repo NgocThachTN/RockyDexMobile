@@ -13,7 +13,6 @@ import (
 // @title RockyDex API
 // @version 1.1.2
 // @description Backend API for RockyDex Mobile App, supporting user authentication, favorites, and reading history synchronization.
-// @host localhost:8080
 // @BasePath /api
 // @securityDefinitions.apikey BearerAuth
 // @in header
