@@ -112,6 +112,49 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+              if (authState.user != null) ...[
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Đăng xuất'),
+                        content: const Text('Bạn có chắc chắn muốn đăng xuất tài khoản không?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('Hủy'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                            child: const Text('Đăng xuất'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      await ref.read(authProvider.notifier).logout();
+                      ref.invalidate(readingStatsProvider);
+                    }
+                  },
+                  icon: const Icon(Icons.logout, size: 16, color: AppColors.error),
+                  label: const Text(
+                    'ĐĂNG XUẤT',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.error),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
+                    minimumSize: const Size.fromHeight(44),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -200,74 +243,29 @@ class ProfileScreen extends ConsumerWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: Row(
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
-                  backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
-                  child: !hasAvatar ? const Icon(Icons.person, size: 32, color: AppColors.primaryBlue) : null,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        user.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user.email,
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
+              backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
+              child: !hasAvatar ? const Icon(Icons.person, size: 32, color: AppColors.primaryBlue) : null,
             ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Đăng xuất'),
-                    content: const Text('Bạn có chắc chắn muốn đăng xuất tài khoản không?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Hủy'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                        child: const Text('Đăng xuất'),
-                      ),
-                    ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                );
-
-                if (confirm == true) {
-                  await ref.read(authProvider.notifier).logout();
-                  ref.invalidate(readingStatsProvider);
-                }
-              },
-              icon: const Icon(Icons.logout, size: 16, color: AppColors.error),
-              label: const Text(
-                'ĐĂNG XUẤT',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.error),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.error,
-                side: const BorderSide(color: AppColors.error),
-                minimumSize: const Size.fromHeight(44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    user.email,
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
               ),
             ),
           ],
