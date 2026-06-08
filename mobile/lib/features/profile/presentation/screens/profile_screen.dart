@@ -405,7 +405,7 @@ class ProfileScreen extends ConsumerWidget {
           color: AppColors.primaryBlue.withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: const Icon(icon, color: AppColors.primaryBlue, size: 18),
+        child: Icon(icon, color: AppColors.primaryBlue, size: 18),
       ),
       title: Text(
         title,
