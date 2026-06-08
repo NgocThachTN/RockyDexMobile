@@ -1,3 +1,7 @@
+Cập nhật v1.1.8:
+- Nâng cấp phiên bản lên v1.1.8+22.
+- Thiết kế lại Kệ sách (Thư viện): Di chuyển nút "Xóa lịch sử" vào trình đơn 3 chấm dọc (PopupMenuButton) ở góc AppBar giúp tối ưu không gian hiển thị, khắc phục hoàn toàn hiện tượng nhãn TabBar bị chèn ép gây tràn chữ thành "Lịc".
+
 Cập nhật v1.1.7:
 - Nâng cấp phiên bản lên v1.1.7+21.
 - Thiết kế lại Trang cá nhân (Cá nhân) hiện đại: Gom nhóm các cài đặt vào thẻ Panel bo góc, loại bỏ các dòng kẻ ngang Divider, đồng bộ hóa biểu tượng cài đặt với nền xanh mờ thương hiệu.

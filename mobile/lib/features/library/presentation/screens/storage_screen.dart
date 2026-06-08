@@ -94,21 +94,33 @@ class _StorageScreenState extends ConsumerState<StorageScreen> with SingleTicker
           ),
         ),
         actions: [
-          if (_tabController.index == 1) // Only show on History tab
-            IconButton(
-              icon: const Icon(Icons.delete_sweep_outlined),
-              tooltip: 'Xóa lịch sử',
-              onPressed: () => _handleClearHistory(context),
-            ),
           IconButton(
             icon: const Icon(Icons.search_rounded),
             tooltip: 'Tìm kiếm',
             onPressed: () => context.push('/search'),
           ),
-          IconButton(
-            icon: const Icon(Icons.more_vert_rounded),
-            onPressed: () {},
-          ),
+          if (_tabController.index == 1)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded),
+              tooltip: 'Thêm',
+              onSelected: (value) {
+                if (value == 'clear_history') {
+                  _handleClearHistory(context);
+                }
+              },
+              itemBuilder: (BuildContext context) => [
+                const PopupMenuItem<String>(
+                  value: 'clear_history',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_sweep_outlined, color: AppColors.error, size: 20),
+                      SizedBox(width: 8),
+                      Text('Xóa toàn bộ lịch sử', style: TextStyle(fontSize: 14)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
       body: TabBarView(
