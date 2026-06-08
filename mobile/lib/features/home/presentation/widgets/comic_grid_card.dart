@@ -9,6 +9,15 @@ class ComicGridCard extends StatelessWidget {
 
   const ComicGridCard({super.key, required this.comic});
 
+  String _formatFollows(int follows) {
+    if (follows >= 1000000) {
+      return '${(follows / 1000000).toStringAsFixed(1)}M';
+    } else if (follows >= 1000) {
+      return '${(follows / 1000).toStringAsFixed(1)}k';
+    }
+    return follows.toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -130,7 +139,46 @@ class ComicGridCard extends StatelessWidget {
                     )
                   else
                     const SizedBox(height: 12),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
+                  
+                  // Rating and Follows
+                  if (comic.rating != null || comic.followsCount != null) ...[
+                    Row(
+                      children: [
+                        if (comic.rating != null) ...[
+                          const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
+                          const SizedBox(width: 2),
+                          Text(
+                            comic.rating!.toStringAsFixed(1),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        if (comic.followsCount != null) ...[
+                          Icon(
+                            Icons.bookmark_rounded,
+                            size: 11,
+                            color: isDark ? Colors.white38 : Colors.black38,
+                          ),
+                          const SizedBox(width: 2),
+                          Text(
+                            _formatFollows(comic.followsCount!),
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? Colors.white54 : Colors.black54,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                  ],
+                  const SizedBox(height: 2),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

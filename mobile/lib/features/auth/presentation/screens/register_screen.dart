@@ -72,12 +72,31 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Icon
-                Icon(
+                const Icon(
                   Icons.person_add_outlined,
-                  size: 60,
+                  size: 48,
                   color: AppColors.primaryBlue,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
+                Text(
+                  'Tạo Tài Khoản',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 22,
+                        color: AppColors.primaryBlue,
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Đăng ký tài khoản mới để đồng bộ dữ liệu đọc truyện',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
+                ),
+                const SizedBox(height: 20),
 
                 TextFormField(
                   controller: _nameController,

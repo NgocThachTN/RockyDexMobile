@@ -12,6 +12,7 @@ import '../../features/home/presentation/screens/category_screen.dart';
 import '../../features/home/presentation/screens/category_detail_screen.dart';
 import '../../features/library/presentation/screens/favorites_screen.dart';
 import '../../features/library/presentation/screens/history_screen.dart';
+import '../../features/library/presentation/screens/storage_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/comic/presentation/screens/comic_detail_screen.dart';
 import '../../features/reader/presentation/screens/reader_screen.dart';
@@ -118,6 +119,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final name = state.extra as String? ?? slug;
           return CategoryDetailScreen(categorySlug: slug, categoryName: name);
         },
+      ),
+      GoRoute(
+        path: '/library',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const StorageScreen(),
       ),
       GoRoute(
         path: '/favorites',

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../../../auth/presentation/auth_notifier.dart';
+import '../../../../core/services/update_service.dart';
 
 final readingStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final favorites = await LocalStorage.getFavorites();
@@ -22,139 +23,171 @@ final readingStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất tài khoản không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await ref.read(authProvider.notifier).logout();
+      ref.invalidate(readingStatsProvider);
+    }
+  }
+
+  void _showStatsBottomSheet(BuildContext context, AsyncValue<Map<String, dynamic>> statsAsync) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Thống kê đọc truyện',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                _buildStatsGrid(context, statsAsync),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(readingStatsProvider);
     final authState = ref.watch(authProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cá Nhân'),
-        centerTitle: true,
+        title: const Text('Cá nhân', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: false,
+        titleSpacing: 16,
+        leading: Navigator.canPop(context) ? const BackButton() : null,
+        actions: [
+          if (authState.user != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: TextButton(
+                onPressed: () => _handleLogout(context, ref),
+                style: TextButton.styleFrom(
+                  backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.12),
+                  foregroundColor: isDark ? Colors.white : Colors.black87,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: const Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: TextButton(
+                onPressed: () => context.push('/login'),
+                style: TextButton.styleFrom(
+                  backgroundColor: AppColors.primaryBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: const Text('Đăng nhập', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              ),
+            ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(readingStatsProvider.future),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Profile Card (Login / Logout aware)
-              _buildProfileCard(context, ref, authState),
+              // 1. Profile Header
+              _buildProfileHeader(context, authState),
 
               const SizedBox(height: 16),
 
-              // 2. Reading Stats (Always shown)
-              Text(
-                'Thống kê đọc truyện',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+              // 2. Ứng dụng Section
+              _buildSectionHeader('Ứng dụng'),
+              Column(
+                children: [
+                  _buildMenuItem(
+                    icon: Icons.menu_book_outlined,
+                    title: 'Lưu trữ',
+                    onTap: () => context.push('/library'),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildMenuItem(
+                    icon: Icons.bar_chart_rounded,
+                    title: 'Thống kê',
+                    onTap: () => _showStatsBottomSheet(context, statsAsync),
+                  ),
+                  const Divider(height: 1, indent: 56),
+                  _buildMenuItem(
+                    icon: Icons.settings_outlined,
+                    title: 'Cài đặt',
+                    onTap: () => context.push('/settings'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              _buildStatsGrid(context, statsAsync),
+
               const SizedBox(height: 16),
 
-              // 3. Settings & Actions List
-              Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(
-                    color: Theme.of(context).dividerColor.withOpacity(0.5),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.history, color: AppColors.primaryBlue, size: 20),
-                      title: const Text('Lịch sử đọc truyện', style: TextStyle(fontSize: 13)),
-                      trailing: const Icon(Icons.chevron_right, size: 16),
-                      onTap: () => context.push('/history'),
+              // 3. Kết nối Section
+              _buildSectionHeader('Kết nối'),
+              _buildMenuItem(
+                icon: Icons.share_outlined,
+                title: 'Mời bạn bè sử dụng',
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('RockyDex'),
+                      content: const Text('Cảm ơn bạn đã giới thiệu RockyDex với bạn bè! Link tải app: https://github.com/NgocThachTN/RockyDexMobile'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Đóng'),
+                        ),
+                      ],
                     ),
-                    const Divider(height: 1, indent: 48),
-                    ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.bookmark_outline, color: AppColors.primaryBlue, size: 20),
-                      title: const Text('Truyện yêu thích', style: TextStyle(fontSize: 13)),
-                      trailing: const Icon(Icons.chevron_right, size: 16),
-                      onTap: () => context.push('/favorites'),
-                    ),
-                    const Divider(height: 1, indent: 48),
-                    ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.settings_outlined, color: AppColors.primaryBlue, size: 20),
-                      title: const Text('Cài đặt đọc truyện', style: TextStyle(fontSize: 13)),
-                      trailing: const Icon(Icons.chevron_right, size: 16),
-                      onTap: () => context.push('/settings'),
-                    ),
-                    const Divider(height: 1, indent: 48),
-                    ListTile(
-                      dense: true,
-                      leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue, size: 20),
-                      title: const Text('Về RockyDex', style: TextStyle(fontSize: 13)),
-                      subtitle: const Text('Phiên bản v1.1.5', style: TextStyle(fontSize: 11)),
-                      onTap: () {
-                        showAboutDialog(
-                          context: context,
-                          applicationName: 'RockyDex',
-                          applicationVersion: '1.1.5',
-                          applicationIcon: Image.asset('assets/images/app_icon.png', width: 48, height: 48, errorBuilder: (_, __, ___) => const Icon(Icons.auto_stories, size: 48, color: AppColors.primaryBlue)),
-                          children: const [
-                            Text('Ứng dụng đọc truyện tranh tối giản, nhanh chóng và mượt mà cho người dùng Việt Nam. Hợp phong thủy Xanh Dương - Xám. Dữ liệu tự động đồng bộ giữa Local DB và Cloud Server.'),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
-              if (authState.user != null) ...[
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    final confirm = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Đăng xuất'),
-                        content: const Text('Bạn có chắc chắn muốn đăng xuất tài khoản không?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('Hủy'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                            child: const Text('Đăng xuất'),
-                          ),
-                        ],
-                      ),
-                    );
 
-                    if (confirm == true) {
-                      await ref.read(authProvider.notifier).logout();
-                      ref.invalidate(readingStatsProvider);
-                    }
-                  },
-                  icon: const Icon(Icons.logout, size: 16, color: AppColors.error),
-                  label: const Text(
-                    'ĐĂNG XUẤT',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.error),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.error,
-                    side: const BorderSide(color: AppColors.error),
-                    minimumSize: const Size.fromHeight(44),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ],
+              // 4. Footer Version Info
+              _buildVersionInfo(context),
             ],
           ),
         ),
@@ -162,114 +195,166 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProfileCard(BuildContext context, WidgetRef ref, AuthState authState) {
+  Widget _buildProfileHeader(BuildContext context, AuthState authState) {
     final user = authState.user;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (user == null) {
-      // Guest Profile Card
-      return Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-          side: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.5),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
-                    child: const Icon(Icons.person, size: 28, color: AppColors.primaryBlue),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Độc giả RockyDex (Khách)',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Đăng nhập để đồng bộ lịch sử và yêu thích',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => context.push('/login'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text(
-                  'ĐĂNG NHẬP / ĐĂNG KÝ',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.5),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Authenticated Profile Card
-    final avatarUrl = user.profile.avatarUrl;
-    final hasAvatar = avatarUrl.isNotEmpty;
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: Theme.of(context).dividerColor.withOpacity(0.5),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      // Guest Profile Header
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: AppColors.primaryBlue.withOpacity(0.15),
-              backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
-              child: !hasAvatar ? const Icon(Icons.person, size: 32, color: AppColors.primaryBlue) : null,
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 36,
+                  backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.15),
+                  child: Icon(Icons.person_outline_rounded, size: 40, color: isDark ? Colors.white60 : Colors.black54),
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1.5),
+                    ),
+                    child: Icon(Icons.add_a_photo_outlined, size: 10, color: isDark ? Colors.white60 : Colors.black54),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(width: 16),
-            Expanded(
+            const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    'Độc giả RockyDex (Khách)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
-                    user.email,
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    'Đăng nhập để đồng bộ lịch sử và yêu thích',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                 ],
               ),
             ),
           ],
         ),
+      );
+    }
+
+    // Authenticated Profile Header
+    final avatarUrl = user.profile.avatarUrl;
+    final hasAvatar = avatarUrl.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        children: [
+          Stack(
+            children: [
+              CircleAvatar(
+                radius: 36,
+                backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.15),
+                backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
+                child: !hasAvatar
+                    ? Icon(Icons.person_outline_rounded, size: 40, color: isDark ? Colors.white60 : Colors.black54)
+                    : null,
+              ),
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Theme.of(context).scaffoldBackgroundColor, width: 1.5),
+                  ),
+                  child: const Icon(Icons.add_a_photo_outlined, size: 10, color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  user.email,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 16.0, bottom: 8.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white70, size: 22),
+      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+      trailing: const Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildVersionInfo(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 32.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Phiên bản: 1.1.6',
+            style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () {
+              UpdateService.checkForUpdates(context);
+            },
+            child: const Icon(
+              Icons.refresh_rounded,
+              size: 16,
+              color: Colors.grey,
+            ),
+          ),
+        ],
       ),
     );
   }

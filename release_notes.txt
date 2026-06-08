@@ -1,3 +1,21 @@
+Cập nhật v1.1.6:
+- Nâng cấp phiên bản lên v1.1.6+20.
+- Hợp nhất Lịch sử và Yêu thích vào một trang Lưu trữ (Kệ sách & Lịch sử) dạng Tab tiện lợi.
+- Thiết kế lại Trang cá nhân tối giản phẳng, hiển thị ảnh đại diện tròn có nút máy ảnh, ẩn tag Free.
+- Nút đăng xuất/đăng nhập được đưa lên góc phải AppBar tinh tế.
+- Bổ sung bộ lọc MangaDex nâng cao: năm (1970 - nay), trạng thái, sắp xếp theo lượt theo dõi/đánh giá.
+- Thêm tab "Theo dõi nhiều nhất" cho MangaDex và các trạng thái phát hành ở trang chủ.
+- Hỗ trợ thêm chương dịch Tiếng Nhật (ja) từ nguồn MangaDex nếu có.
+- Thay thế icon nút Đọc từ đầu thành biểu tượng sách (Icons.menu_book) trực quan hơn.
+- Thu gọn logo trang Đăng nhập, Đăng ký, Quên mật khẩu gọn gàng và cân đối hơn.
+
+Cập nhật v1.1.5:
+- Nâng cấp phiên bản lên v1.1.5+19.
+- Tích hợp đăng nhập Google nguyên bản (Native Google Sign-In) với cơ chế tự động chuyển sang giả lập khi lỗi ở máy ảo.
+- Tối ưu trang cá nhân: di chuyển nút Đăng xuất xuống cuối trang gọn gàng hơn.
+- Sửa lỗi chữ tiêu đề Tab trang chủ bị mất, cho phép cuộn ngang như Hako.
+- Thiết kế lại các ô nhập thông tin xác thực dạng gạch chân tối giản chuyên nghiệp.
+
 Cập nhật v1.1.0:
 - Nâng cấp phiên bản hệ thống lên v1.1.0+14.
 - Sửa lỗi không lưu lịch sử đọc khi đọc truyện nguồn MangaDex bằng cách lưu trực tiếp siêu dữ liệu từ màn hình chi tiết truyện và bổ sung cơ chế tải lại dữ liệu tức thì.

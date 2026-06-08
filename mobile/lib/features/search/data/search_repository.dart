@@ -22,6 +22,7 @@ class SearchRepository {
   final MangadexApiClient _mangadexApi;
   final SharedPreferences _prefs;
   final ServerSource _source;
+  ServerSource get source => _source;
   late final OtruyenApiClient _otruyenApi;
   static const String _historyKey = 'search_history_list';
 
@@ -29,21 +30,89 @@ class SearchRepository {
     _otruyenApi = OtruyenApiClient(_dio);
   }
 
-  Future<List<ComicModel>> searchComics(String keyword, {int page = 1}) async {
+  Future<List<ComicModel>> searchComics(
+    String keyword, {
+    int page = 1,
+    String? year,
+    String? status,
+    String? sortBy,
+  }) async {
     if (_source == ServerSource.mangadex) {
       try {
         final offset = (page - 1) * 20;
+        final queryParams = <String, dynamic>{
+          'limit': 20,
+          'offset': offset,
+          'includes[]': ['cover_art', 'author'],
+        };
+
+        if (keyword.trim().isNotEmpty) {
+          queryParams['title'] = keyword.trim();
+        }
+
+        // Apply Year Filter (if not 'all')
+        if (year != null && year != 'all') {
+          final yearInt = int.tryParse(year);
+          if (yearInt != null) {
+            queryParams['year'] = yearInt;
+          }
+        }
+
+        // Apply Status Filter (if not 'all')
+        if (status != null && status != 'all') {
+          if (status == 'ongoing' || status == 'completed' || status == 'hiatus' || status == 'cancelled') {
+            queryParams['status[]'] = [status];
+          }
+        }
+
+        // Apply Sort Order (if not null)
+        final orderParam = sortBy ?? 'latestUploadedChapter';
+        queryParams['order[$orderParam]'] = 'desc';
+
         final response = await _mangadexApi.get(
           '/manga',
-          queryParameters: {
-            'title': keyword,
-            'limit': 20,
-            'offset': offset,
-            'includes[]': ['cover_art', 'author'],
-            'order[latestUploadedChapter]': 'desc',
-          },
+          queryParameters: queryParams,
         );
-        return await _mapMangaDexComicsResponse(response.data);
+
+        final comics = await _mapMangaDexComicsResponse(response.data);
+
+        // Fetch statistics for these comics and merge them
+        if (comics.isNotEmpty) {
+          try {
+            final ids = comics.map((c) => c.id).toList();
+            final statsResponse = await _mangadexApi.get(
+              '/statistics/manga',
+              queryParameters: {
+                'manga[]': ids,
+              },
+            );
+
+            var statsData = statsResponse.data;
+            if (statsData is String) {
+              statsData = jsonDecode(statsData);
+            }
+            final statsMap = statsData['statistics'] as Map<String, dynamic>? ?? {};
+
+            return comics.map((c) {
+              final comicStats = statsMap[c.id];
+              if (comicStats != null) {
+                final ratingData = comicStats['rating'];
+                final averageRating = (ratingData?['average'] as num?)?.toDouble() ??
+                                      (ratingData?['bayesian'] as num?)?.toDouble();
+                final followsCount = comicStats['follows'] as int?;
+                return c.copyWith(
+                  rating: averageRating,
+                  followsCount: followsCount,
+                );
+              }
+              return c;
+            }).toList();
+          } catch (statsError) {
+            print('Lỗi khi tải thống kê MangaDex: $statsError');
+          }
+        }
+
+        return comics;
       } catch (e) {
         throw Exception('Tìm kiếm trên MangaDex thất bại: $e');
       }

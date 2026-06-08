@@ -6,19 +6,29 @@ import 'package:mobile/core/constants/colors.dart';
 import 'package:mobile/core/storage/local_storage.dart';
 import '../library_providers.dart';
 
-class FavoritesScreen extends ConsumerWidget {
+class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final favoritesAsync = ref.watch(libraryFavoritesProvider);
-
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Truyện Yêu Thích'),
         centerTitle: true,
       ),
-      body: RefreshIndicator(
+      body: const FavoritesContent(),
+    );
+  }
+}
+
+class FavoritesContent extends ConsumerWidget {
+  const FavoritesContent({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final favoritesAsync = ref.watch(libraryFavoritesProvider);
+
+    return RefreshIndicator(
         onRefresh: () async => ref.invalidate(libraryFavoritesProvider),
         child: favoritesAsync.when(
           data: (list) {
@@ -146,7 +156,6 @@ class FavoritesScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
           error: (err, stack) => Center(child: Text('Lỗi: $err')),
         ),
-      ),
-    );
+      );
+    }
   }
-}

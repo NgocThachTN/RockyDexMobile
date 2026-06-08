@@ -75,12 +75,21 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _showStatusFilterPicker(BuildContext context, SearchState state) {
-    final statuses = [
-      {'name': 'Mọi tình trạng', 'value': 'all'},
-      {'name': 'Đang phát hành', 'value': 'ongoing'},
-      {'name': 'Hoàn thành', 'value': 'completed'},
-      {'name': 'Sắp ra mắt', 'value': 'coming_soon'},
-    ];
+    final isMangaDex = state.isMangaDex;
+    final List<Map<String, String>> statuses = isMangaDex
+        ? [
+            {'name': 'Mọi tình trạng', 'value': 'all'},
+            {'name': 'Đang tiến hành', 'value': 'ongoing'},
+            {'name': 'Đã hoàn thành', 'value': 'completed'},
+            {'name': 'Tạm ngưng', 'value': 'hiatus'},
+            {'name': 'Đã hủy', 'value': 'cancelled'},
+          ]
+        : [
+            {'name': 'Mọi tình trạng', 'value': 'all'},
+            {'name': 'Đang phát hành', 'value': 'ongoing'},
+            {'name': 'Hoàn thành', 'value': 'completed'},
+            {'name': 'Sắp ra mắt', 'value': 'coming_soon'},
+          ];
 
     _showPicker(
       context,
@@ -94,16 +103,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   void _showYearFilterPicker(BuildContext context, SearchState state) {
-    final years = [
+    final List<Map<String, String>> years = [
       {'name': 'Mọi năm', 'value': 'all'},
-      {'name': 'Năm 2026', 'value': '2026'},
-      {'name': 'Năm 2025', 'value': '2025'},
-      {'name': 'Năm 2024', 'value': '2024'},
-      {'name': 'Năm 2023', 'value': '2023'},
-      {'name': 'Năm 2022', 'value': '2022'},
-      {'name': 'Năm 2021', 'value': '2021'},
-      {'name': 'Trước 2021', 'value': 'before_2021'},
     ];
+
+    if (state.isMangaDex) {
+      final currentYear = DateTime.now().year;
+      for (int y = currentYear; y >= 1970; y--) {
+        years.add({'name': 'Năm $y', 'value': y.toString()});
+      }
+    } else {
+      years.addAll([
+        {'name': 'Năm 2026', 'value': '2026'},
+        {'name': 'Năm 2025', 'value': '2025'},
+        {'name': 'Năm 2024', 'value': '2024'},
+        {'name': 'Năm 2023', 'value': '2023'},
+        {'name': 'Năm 2022', 'value': '2022'},
+        {'name': 'Năm 2021', 'value': '2021'},
+        {'name': 'Trước 2021', 'value': 'before_2021'},
+      ]);
+    }
 
     _showPicker(
       context,
@@ -112,6 +131,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       selectedValue: state.selectedYear,
       onSelected: (val) {
         ref.read(searchProvider.notifier).updateYear(val);
+      },
+    );
+  }
+
+  void _showSortFilterPicker(BuildContext context, SearchState state) {
+    final sortOptions = [
+      {'name': 'Mới cập nhật', 'value': 'latestUploadedChapter'},
+      {'name': 'Nổi bật', 'value': 'relevance'},
+      {'name': 'Đánh giá cao nhất', 'value': 'rating'},
+      {'name': 'Theo dõi nhiều nhất', 'value': 'followedCount'},
+    ];
+
+    _showPicker(
+      context,
+      title: 'Chọn Sắp Xếp',
+      options: sortOptions,
+      selectedValue: state.selectedSortBy,
+      onSelected: (val) {
+        ref.read(searchProvider.notifier).updateSortBy(val);
       },
     );
   }
@@ -176,9 +214,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }
 
   Widget _buildFilterBar(SearchState state) {
+    final isMangaDex = state.isMangaDex;
     final hasActiveFilter = state.selectedCountry != 'all' ||
         state.selectedStatus != 'all' ||
-        state.selectedYear != 'all';
+        state.selectedYear != 'all' ||
+        (isMangaDex && state.selectedSortBy != 'latestUploadedChapter');
 
     final countryLabel = {
       'all': 'Tất cả quốc gia',
@@ -188,23 +228,31 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       'vietnam': 'Việt Nam',
     }[state.selectedCountry]!;
 
-    final statusLabel = {
-      'all': 'Mọi tình trạng',
-      'ongoing': 'Đang phát hành',
-      'completed': 'Hoàn thành',
-      'coming_soon': 'Sắp ra mắt',
-    }[state.selectedStatus]!;
+    final statusLabel = isMangaDex
+        ? {
+            'all': 'Mọi tình trạng',
+            'ongoing': 'Đang tiến hành',
+            'completed': 'Đã hoàn thành',
+            'hiatus': 'Tạm ngưng',
+            'cancelled': 'Đã hủy',
+          }[state.selectedStatus]!
+        : {
+            'all': 'Mọi tình trạng',
+            'ongoing': 'Đang phát hành',
+            'completed': 'Hoàn thành',
+            'coming_soon': 'Sắp ra mắt',
+          }[state.selectedStatus]!;
 
-    final yearLabel = {
-      'all': 'Mọi năm',
-      '2026': 'Năm 2026',
-      '2025': 'Năm 2025',
-      '2024': 'Năm 2024',
-      '2023': 'Năm 2023',
-      '2022': 'Năm 2022',
-      '2021': 'Năm 2021',
-      'before_2021': 'Trước 2021',
-    }[state.selectedYear]!;
+    final yearLabel = state.selectedYear == 'all'
+        ? 'Mọi năm'
+        : (state.selectedYear == 'before_2021' ? 'Trước 2021' : 'Năm ${state.selectedYear}');
+
+    final sortLabel = {
+      'latestUploadedChapter': 'Mới cập nhật',
+      'relevance': 'Nổi bật',
+      'rating': 'Đánh giá cao',
+      'followedCount': 'Theo dõi nhiều',
+    }[state.selectedSortBy] ?? 'Sắp xếp';
 
     return Container(
       height: 44,
@@ -215,13 +263,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                _buildFilterChip(
-                  context,
-                  label: countryLabel,
-                  isActive: state.selectedCountry != 'all',
-                  onTap: () => _showCountryFilterPicker(context, state),
-                ),
-                const SizedBox(width: 8),
+                if (!isMangaDex) ...[
+                  _buildFilterChip(
+                    context,
+                    label: countryLabel,
+                    isActive: state.selectedCountry != 'all',
+                    onTap: () => _showCountryFilterPicker(context, state),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 _buildFilterChip(
                   context,
                   label: statusLabel,
@@ -235,6 +285,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   isActive: state.selectedYear != 'all',
                   onTap: () => _showYearFilterPicker(context, state),
                 ),
+                if (isMangaDex) ...[
+                  const SizedBox(width: 8),
+                  _buildFilterChip(
+                    context,
+                    label: sortLabel,
+                    isActive: state.selectedSortBy != 'latestUploadedChapter',
+                    onTap: () => _showSortFilterPicker(context, state),
+                  ),
+                ],
               ],
             ),
           ),
@@ -378,9 +437,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ),
       body: Column(
         children: [
-          if (_searchController.text.isNotEmpty) _buildFilterBar(searchState),
+          if (_searchController.text.isNotEmpty || searchState.isMangaDex)
+            _buildFilterBar(searchState),
           Expanded(
-            child: _searchController.text.isEmpty && searchState.history.isNotEmpty
+            child: _searchController.text.isEmpty && searchState.results.isEmpty && searchState.history.isNotEmpty
                 ? _buildSearchHistory(searchState.history)
                 : _buildSearchResults(searchState),
           ),

@@ -33,7 +33,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     final isMangaDex = activeSource == ServerSource.mangadex;
-    final tabCount = isMangaDex ? 4 : 3;
+    final tabCount = isMangaDex ? 8 : 6;
 
     return DefaultTabController(
       key: ValueKey(activeSource), // Recreates TabController and resets index when source changes
@@ -115,7 +115,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             tabs: [
               const Tab(text: 'Cập nhật'),
               const Tab(text: 'Truyện mới'),
+              const Tab(text: 'Đang phát hành'),
+              const Tab(text: 'Hoàn thành'),
+              const Tab(text: 'Sắp ra mắt'),
               if (isMangaDex) const Tab(text: 'Đánh giá cao'),
+              if (isMangaDex) const Tab(text: 'Theo dõi nhiều nhất'),
               const Tab(text: 'Theo dõi'),
             ],
             indicatorColor: AppColors.primaryBlue,
@@ -132,10 +136,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const HomeTabList(listType: ApiConstants.listNew),
             // Tab 1: Truyện mới
             const HomeTabList(listType: ApiConstants.listFeatured),
-            // Tab 2 (MangaDex only): Đánh giá cao
+            // Tab 2: Đang phát hành
+            const HomeTabList(listType: ApiConstants.listOngoing),
+            // Tab 3: Hoàn thành
+            const HomeTabList(listType: ApiConstants.listCompleted),
+            // Tab 4: Sắp ra mắt
+            const HomeTabList(listType: ApiConstants.listComingSoon),
+            // Tab 5 (MangaDex only): Đánh giá cao
             if (isMangaDex)
               const HomeTabList(listType: ApiConstants.listMangaDexTopRated),
-            // Tab 2 (OTruyen) / Tab 3 (MangaDex): Theo dõi
+            // Tab 6 (MangaDex only): Theo dõi nhiều nhất
+            if (isMangaDex)
+              const HomeTabList(listType: ApiConstants.listMangaDexMostFollowed),
+            // Tab 7: Theo dõi
             const HomeFavoritesTab(),
           ],
         ),

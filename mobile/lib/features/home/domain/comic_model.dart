@@ -68,6 +68,8 @@ class ComicModel {
   final List<CategoryModel> category;
   final String updatedAt;
   final List<ChapterSummaryModel>? chaptersLatest;
+  final double? rating;
+  final int? followsCount;
 
   const ComicModel({
     required this.id,
@@ -79,6 +81,8 @@ class ComicModel {
     required this.category,
     required this.updatedAt,
     this.chaptersLatest,
+    this.rating,
+    this.followsCount,
   });
 
   factory ComicModel.fromJson(Map<String, dynamic> json) {
@@ -107,6 +111,8 @@ class ComicModel {
       category: cats,
       updatedAt: json['updatedAt'] as String? ?? '',
       chaptersLatest: chaps,
+      rating: (json['rating'] as num?)?.toDouble(),
+      followsCount: json['followsCount'] as int?,
     );
   }
 
@@ -121,6 +127,36 @@ class ComicModel {
       'category': category.map((e) => e.toJson()).toList(),
       'updatedAt': updatedAt,
       'chaptersLatest': chaptersLatest?.map((e) => e.toJson()).toList(),
+      'rating': rating,
+      'followsCount': followsCount,
     };
+  }
+
+  ComicModel copyWith({
+    String? id,
+    String? name,
+    String? slug,
+    List<String>? originName,
+    String? status,
+    String? thumbUrl,
+    List<CategoryModel>? category,
+    String? updatedAt,
+    List<ChapterSummaryModel>? chaptersLatest,
+    double? rating,
+    int? followsCount,
+  }) {
+    return ComicModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      slug: slug ?? this.slug,
+      originName: originName ?? this.originName,
+      status: status ?? this.status,
+      thumbUrl: thumbUrl ?? this.thumbUrl,
+      category: category ?? this.category,
+      updatedAt: updatedAt ?? this.updatedAt,
+      chaptersLatest: chaptersLatest ?? this.chaptersLatest,
+      rating: rating ?? this.rating,
+      followsCount: followsCount ?? this.followsCount,
+    );
   }
 }

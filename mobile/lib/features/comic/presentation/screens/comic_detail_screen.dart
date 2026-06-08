@@ -285,7 +285,7 @@ class _ComicDetailScreenState extends ConsumerState<ComicDetailScreen> {
                                     }
                                   },
                                   icon: Icon(
-                                    hasHistory ? Icons.shortcut_rounded : Icons.play_arrow_rounded,
+                                    hasHistory ? Icons.shortcut_rounded : Icons.menu_book_rounded,
                                     size: 20,
                                   ),
                                   label: Text(

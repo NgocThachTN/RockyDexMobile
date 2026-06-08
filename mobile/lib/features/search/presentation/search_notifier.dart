@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/server_source_provider.dart';
 import '../../home/domain/comic_model.dart';
 import '../data/search_repository.dart';
 
@@ -12,11 +13,13 @@ class SearchState {
   final bool hasMore;
   final String? error;
   final int targetFilteredCount;
+  final bool isMangaDex;
 
   // Filters
   final String selectedCountry; // 'all', 'china' (Trung Quốc), 'korea' (Hàn Quốc), 'japan' (Nhật Bản), 'vietnam' (Việt Nam)
   final String selectedStatus;  // 'all', 'ongoing', 'completed'
   final String selectedYear;    // 'all', '2026', '2025', '2024', '2023', '2022', '2021', 'before_2021'
+  final String selectedSortBy;  // 'latestUploadedChapter', 'relevance', 'rating', 'followedCount'
 
   SearchState({
     this.query = '',
@@ -28,12 +31,17 @@ class SearchState {
     this.hasMore = true,
     this.error,
     this.targetFilteredCount = 20,
+    this.isMangaDex = false,
     this.selectedCountry = 'all',
     this.selectedStatus = 'all',
     this.selectedYear = 'all',
+    this.selectedSortBy = 'latestUploadedChapter',
   });
 
   List<ComicModel> get filteredResults {
+    if (isMangaDex) {
+      return results;
+    }
     return results.where((comic) {
       // 1. Filter by status
       if (selectedStatus != 'all' && comic.status != selectedStatus) {
@@ -93,9 +101,11 @@ class SearchState {
     bool? hasMore,
     String? error,
     int? targetFilteredCount,
+    bool? isMangaDex,
     String? selectedCountry,
     String? selectedStatus,
     String? selectedYear,
+    String? selectedSortBy,
   }) {
     return SearchState(
       query: query ?? this.query,
@@ -107,9 +117,11 @@ class SearchState {
       hasMore: hasMore ?? this.hasMore,
       error: error,
       targetFilteredCount: targetFilteredCount ?? this.targetFilteredCount,
+      isMangaDex: isMangaDex ?? this.isMangaDex,
       selectedCountry: selectedCountry ?? this.selectedCountry,
       selectedStatus: selectedStatus ?? this.selectedStatus,
       selectedYear: selectedYear ?? this.selectedYear,
+      selectedSortBy: selectedSortBy ?? this.selectedSortBy,
     );
   }
 }
@@ -124,6 +136,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
   SearchNotifier(this._repository) : super(SearchState()) {
     _loadHistory();
+    state = state.copyWith(isMangaDex: _repository.source == ServerSource.mangadex);
   }
 
   void _loadHistory() {
@@ -131,7 +144,8 @@ class SearchNotifier extends StateNotifier<SearchState> {
   }
 
   Future<void> search(String query, {bool saveToHistory = false}) async {
-    if (query.trim().isEmpty) {
+    final isMangaDex = _repository.source == ServerSource.mangadex;
+    if (query.trim().isEmpty && !isMangaDex) {
       state = state.copyWith(query: '', results: []);
       return;
     }
@@ -144,18 +158,25 @@ class SearchNotifier extends StateNotifier<SearchState> {
       hasMore: true,
       error: null,
       targetFilteredCount: 20,
+      isMangaDex: isMangaDex,
     );
-    if (saveToHistory) {
+    if (saveToHistory && query.trim().isNotEmpty) {
       await _repository.addSearchHistory(query);
       _loadHistory();
     }
 
     try {
-      final list = await _repository.searchComics(query, page: 1);
+      final list = await _repository.searchComics(
+        query,
+        page: 1,
+        year: state.selectedYear,
+        status: state.selectedStatus,
+        sortBy: state.selectedSortBy,
+      );
       state = state.copyWith(
         isLoading: false,
         results: list,
-        hasMore: list.length >= 20, // OTruyen API standard page size is 20/24
+        hasMore: list.length >= 20,
       );
       _checkAndLoadMore();
     } catch (e) {
@@ -164,7 +185,8 @@ class SearchNotifier extends StateNotifier<SearchState> {
   }
 
   Future<void> loadMore() async {
-    if (state.isLoading || state.isLoadMore || !state.hasMore || state.query.isEmpty) return;
+    if (state.isLoading || state.isLoadMore || !state.hasMore) return;
+    if (!state.isMangaDex && state.query.isEmpty) return;
 
     final newTarget = state.filteredResults.length < state.targetFilteredCount ? state.targetFilteredCount : state.targetFilteredCount + 20;
     state = state.copyWith(
@@ -174,7 +196,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
     final nextPage = state.page + 1;
 
     try {
-      final list = await _repository.searchComics(state.query, page: nextPage);
+      final list = await _repository.searchComics(
+        state.query,
+        page: nextPage,
+        year: state.selectedYear,
+        status: state.selectedStatus,
+        sortBy: state.selectedSortBy,
+      );
       state = state.copyWith(
         isLoadMore: false,
         results: [...state.results, ...list],
@@ -188,7 +216,8 @@ class SearchNotifier extends StateNotifier<SearchState> {
   }
 
   void _checkAndLoadMore() {
-    if (state.isLoading || state.isLoadMore || !state.hasMore || state.query.isEmpty) return;
+    if (state.isLoading || state.isLoadMore || !state.hasMore) return;
+    if (!state.isMangaDex && state.query.isEmpty) return;
     if (state.filteredResults.length < state.targetFilteredCount) {
       loadMore();
     }
@@ -210,12 +239,29 @@ class SearchNotifier extends StateNotifier<SearchState> {
 
   void updateStatus(String status) {
     state = state.copyWith(selectedStatus: status, targetFilteredCount: 20);
-    _checkAndLoadMore();
+    if (state.isMangaDex) {
+      search(state.query, saveToHistory: false);
+    } else {
+      _checkAndLoadMore();
+    }
   }
 
   void updateYear(String year) {
     state = state.copyWith(selectedYear: year, targetFilteredCount: 20);
-    _checkAndLoadMore();
+    if (state.isMangaDex) {
+      search(state.query, saveToHistory: false);
+    } else {
+      _checkAndLoadMore();
+    }
+  }
+
+  void updateSortBy(String sortBy) {
+    state = state.copyWith(selectedSortBy: sortBy, targetFilteredCount: 20);
+    if (state.isMangaDex) {
+      search(state.query, saveToHistory: false);
+    } else {
+      _checkAndLoadMore();
+    }
   }
 
   void resetFilters() {
@@ -223,8 +269,13 @@ class SearchNotifier extends StateNotifier<SearchState> {
       selectedCountry: 'all',
       selectedStatus: 'all',
       selectedYear: 'all',
+      selectedSortBy: 'latestUploadedChapter',
       targetFilteredCount: 20,
     );
-    _checkAndLoadMore();
+    if (state.isMangaDex) {
+      search(state.query, saveToHistory: false);
+    } else {
+      _checkAndLoadMore();
+    }
   }
 }

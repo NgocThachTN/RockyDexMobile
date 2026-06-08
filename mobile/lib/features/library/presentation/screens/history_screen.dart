@@ -6,58 +6,72 @@ import '../../../../core/constants/colors.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../library_providers.dart';
 
-class HistoryScreen extends ConsumerWidget {
+class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final historyAsync = ref.watch(libraryHistoryProvider);
-
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lịch Sử Đọc'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined),
-            tooltip: 'Xóa lịch sử',
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Xóa lịch sử'),
-                  content: const Text('Bạn có chắc chắn muốn xóa toàn bộ lịch sử đọc truyện không?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Hủy'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                      child: const Text('Xóa'),
-                    ),
-                  ],
-                ),
-              );
-
-              if (confirm == true) {
-                await LocalStorage.clearHistory();
-                ref.invalidate(libraryHistoryProvider);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Đã xóa toàn bộ lịch sử đọc'),
-                      duration: Duration(seconds: 2),
+          Consumer(
+            builder: (context, ref, child) {
+              return IconButton(
+                icon: const Icon(Icons.delete_sweep_outlined),
+                tooltip: 'Xóa lịch sử',
+                onPressed: () async {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Xóa lịch sử'),
+                      content: const Text('Bạn có chắc chắn muốn xóa toàn bộ lịch sử đọc truyện không?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Hủy'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                          child: const Text('Xóa'),
+                        ),
+                      ],
                     ),
                   );
-                }
-              }
+
+                  if (confirm == true) {
+                    await LocalStorage.clearHistory();
+                    ref.invalidate(libraryHistoryProvider);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Đã xóa toàn bộ lịch sử đọc'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  }
+                },
+              );
             },
           ),
         ],
       ),
-      body: RefreshIndicator(
+      body: const HistoryContent(),
+    );
+  }
+}
+
+class HistoryContent extends ConsumerWidget {
+  const HistoryContent({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(libraryHistoryProvider);
+
+    return RefreshIndicator(
         onRefresh: () async => ref.invalidate(libraryHistoryProvider),
         child: historyAsync.when(
           data: (list) {
@@ -192,7 +206,6 @@ class HistoryScreen extends ConsumerWidget {
           loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
           error: (err, stack) => Center(child: Text('Lỗi: $err')),
         ),
-      ),
-    );
+      );
+    }
   }
-}

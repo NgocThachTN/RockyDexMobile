@@ -159,28 +159,31 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         key: const ValueKey('email_step'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
+          const Icon(
             Icons.lock_reset,
-            size: 80,
+            size: 48,
             color: AppColors.primaryBlue,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             'Quên Mật Khẩu?',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: AppColors.primaryBlue,
                 ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             'Nhập email đã đăng ký của bạn. Chúng tôi sẽ gửi mã PIN 6 chữ số để đặt lại mật khẩu.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
 
           TextFormField(
             controller: _emailController,
@@ -251,26 +254,29 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         key: const ValueKey('reset_step'),
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(
+          const Icon(
             Icons.pin_outlined,
-            size: 80,
+            size: 48,
             color: AppColors.primaryBlue,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             'Nhập Mã PIN & Mật Khẩu Mới',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w900,
                   color: AppColors.primaryBlue,
                 ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Text(
             'Chúng tôi đã gửi mã xác nhận đến ${_emailController.text}.',
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
           ),
           if (_devResetCode != null) ...[
             const SizedBox(height: 8),

@@ -171,7 +171,7 @@ class ComicRepository {
         '/manga/$id/feed',
         queryParameters: {
           'limit': 500,
-          'translatedLanguage[]': ['vi', 'en'],
+          'translatedLanguage[]': ['vi', 'en', 'ja'],
           'order[chapter]': 'desc',
           'includes[]': ['scanlation_group'],
         },
@@ -185,6 +185,7 @@ class ComicRepository {
 
       final List<ChapterModel> viChapters = [];
       final List<ChapterModel> enChapters = [];
+      final List<ChapterModel> jaChapters = [];
 
       for (final ch in feedItems) {
         final chId = ch['id'] as String? ?? '';
@@ -202,7 +203,9 @@ class ComicRepository {
 
         if (chLang == 'vi') {
           viChapters.add(chapterModel);
-        } else {
+        } else if (chLang == 'ja') {
+          jaChapters.add(chapterModel);
+        } else if (chLang == 'en') {
           enChapters.add(chapterModel);
         }
       }
@@ -213,6 +216,9 @@ class ComicRepository {
       }
       if (enChapters.isNotEmpty) {
         servers.add(ServerModel(serverName: 'Tiếng Anh', serverData: enChapters));
+      }
+      if (jaChapters.isNotEmpty) {
+        servers.add(ServerModel(serverName: 'Tiếng Nhật', serverData: jaChapters));
       }
       if (servers.isEmpty) {
         servers.add(const ServerModel(serverName: 'Tiếng Việt', serverData: []));

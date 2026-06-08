@@ -153,15 +153,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // App Logo
                 const Icon(
                   Icons.auto_stories,
-                  size: 80,
+                  size: 52,
                   color: AppColors.primaryBlue,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   'RockyDex',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 28,
+                        fontSize: 24,
                         color: AppColors.primaryBlue,
                         fontWeight: FontWeight.w900,
                       ),
@@ -170,9 +170,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Text(
                   'Ứng dụng đọc truyện tranh tối giản & mượt mà',
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
                 TextFormField(
                   controller: _emailController,
