@@ -8,22 +8,24 @@ import '../../../core/network/mangadex_api_client.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../auth/presentation/auth_notifier.dart';
 import '../../home/domain/comic_model.dart';
+import '../../library/data/library_repository.dart';
 import '../domain/comic_detail_model.dart';
 
 final comicRepositoryProvider = Provider<ComicRepository>((ref) {
   final dio = ref.watch(dioProvider);
   final mangadexApi = ref.watch(mangadexApiClientProvider);
   final authState = ref.watch(authProvider);
-  return ComicRepository(dio, mangadexApi, authState);
+  return ComicRepository(dio, mangadexApi, authState, ref);
 });
 
 class ComicRepository {
   final Dio _dio;
   final MangadexApiClient _mangadexApi;
   final AuthState _authState;
+  final Ref _ref;
   late final OtruyenApiClient _otruyenApi;
 
-  ComicRepository(this._dio, this._mangadexApi, this._authState) {
+  ComicRepository(this._dio, this._mangadexApi, this._authState, this._ref) {
     _otruyenApi = OtruyenApiClient(_dio);
   }
 
@@ -246,8 +248,10 @@ class ComicRepository {
         'thumb_url': comic.thumbUrl,
         'created_at': DateTime.now().toIso8601String(),
       });
+      await _ref.read(libraryRepositoryProvider).addFavoriteRemote(comic.slug, comic.name, comic.thumbUrl);
     } else {
       await LocalStorage.deleteFavorite(comic.slug);
+      await _ref.read(libraryRepositoryProvider).removeFavoriteRemote(comic.slug);
     }
   }
 
@@ -269,6 +273,14 @@ class ComicRepository {
       'progress_percent': progressPercent,
       'last_read_at': DateTime.now().toIso8601String(),
     });
+    await _ref.read(libraryRepositoryProvider).saveHistoryRemote(
+      comicSlug: comicSlug,
+      comicName: comicName,
+      comicThumb: comicThumb,
+      chapterSlug: chapterSlug,
+      chapterName: chapterName,
+      progressPercent: progressPercent,
+    );
   }
 
   Future<Map<String, dynamic>?> getReadingHistory(String comicSlug) async {

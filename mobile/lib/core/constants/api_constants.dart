@@ -29,6 +29,7 @@ class ApiConstants {
   static const String listNew = 'truyen-moi';
   // UI-only value. Featured comics are loaded from /home, not /danh-sach/{type}.
   static const String listFeatured = 'home';
+  static const String listMangaDexTopRated = 'mangadex-top-rated';
   static const String listCompleted = 'hoan-thanh';
   static const String listOngoing = 'dang-phat-hanh';
   static const String listComingSoon = 'sap-ra-mat';

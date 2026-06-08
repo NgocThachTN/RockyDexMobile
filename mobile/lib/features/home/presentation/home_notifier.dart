@@ -82,127 +82,26 @@ class HomeNotifier extends StateNotifier<HomeState> {
     _didInit = true;
 
     state = state.copyWith(
-      isLoading: true,
       isCategoriesLoading: !_didLoadCategories,
-      error: null,
       categoriesError: null,
-      page: 1,
-      hasMore: true,
     );
 
-    final results = await Future.wait([
-      if (!_didLoadCategories)
-        _guard<List<CategoryModel>>(_repository.getCategories()),
-      _guard<List<ComicModel>>(_loadComicsPage(1)),
-    ]);
-
-    final categoriesResult =
-        !_didLoadCategories ? results.first as _LoadResult<List<CategoryModel>> : null;
-    final comicsResult =
-        results.last as _LoadResult<List<ComicModel>>;
-
-    final categories = categoriesResult?.data;
-    if (categories != null) {
-      _didLoadCategories = true;
-    }
-
-    final comics = comicsResult.data;
-    state = state.copyWith(
-      categories: categories ?? state.categories,
-      comics: comics ?? state.comics,
-      isLoading: false,
-      isCategoriesLoading: false,
-      error: comics == null ? comicsResult.error.toString() : null,
-      categoriesError: categoriesResult?.error?.toString(),
-      page: 1,
-      hasMore: state.isFeaturedList ? false : (comics?.isNotEmpty ?? false),
-    );
-  }
-
-  Future<void> selectListType(String listType) async {
-    if (state.selectedListType == listType && !state.isCategoryFilterActive) return;
-    state = state.copyWith(
-      selectedListType: listType,
-      selectedCategorySlug: '',
-    );
-    await loadComics(reset: true);
-  }
-
-  Future<void> selectCategory(String categorySlug) async {
-    if (state.selectedCategorySlug == categorySlug) return;
-    state = state.copyWith(
-      selectedCategorySlug: categorySlug,
-    );
-    await loadComics(reset: true);
-  }
-
-  Future<void> clearCategory() async {
-    if (state.selectedCategorySlug.isEmpty) return;
-    state = state.copyWith(selectedCategorySlug: '');
-    await loadComics(reset: true);
-  }
-
-  Future<void> loadComics({bool reset = false}) async {
-    if (state.isLoadMore || state.isLoading) return;
-    if (!reset && (!state.hasMore || state.isFeaturedList)) return;
-
-    final targetPage = reset ? 1 : state.page + 1;
-    if (reset) {
-      state = state.copyWith(isLoading: true, error: null, page: 1, hasMore: true);
-    } else {
-      state = state.copyWith(isLoadMore: true);
-    }
-
-    try {
-      final list = await _loadComicsPage(targetPage);
+    if (!_didLoadCategories || force) {
+      final result = await _guard<List<CategoryModel>>(_repository.getCategories());
+      final categories = result.data;
+      if (categories != null) {
+        _didLoadCategories = true;
+      }
       state = state.copyWith(
-        isLoading: false,
-        isLoadMore: false,
-        comics: reset ? list : [...state.comics, ...list],
-        page: targetPage,
-        hasMore: state.isFeaturedList ? false : list.isNotEmpty,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        isLoadMore: false,
-        error: e.toString(),
+        categories: categories ?? state.categories,
+        isCategoriesLoading: false,
+        categoriesError: result.error?.toString(),
       );
     }
-  }
-
-  Future<void> refresh() async {
-    if (!_didLoadCategories && state.comics.isEmpty) {
-      await init(force: true);
-      return;
-    }
-    await loadComics(reset: true);
   }
 
   Future<void> reloadCategories() async {
-    if (state.isCategoriesLoading || _didLoadCategories) return;
-
-    state = state.copyWith(isCategoriesLoading: true, categoriesError: null);
-    final result = await _guard<List<CategoryModel>>(_repository.getCategories());
-    final categories = result.data;
-    if (categories != null) {
-      _didLoadCategories = true;
-    }
-    state = state.copyWith(
-      categories: categories ?? state.categories,
-      isCategoriesLoading: false,
-      categoriesError: result.error?.toString(),
-    );
-  }
-
-  Future<List<ComicModel>> _loadComicsPage(int page) {
-    if (state.isCategoryFilterActive) {
-      return _repository.getComicsByCategory(state.selectedCategorySlug, page: page);
-    }
-    if (state.isFeaturedList) {
-      return _repository.getHomeComics();
-    }
-    return _repository.getComicsList(state.selectedListType, page: page);
+    await init(force: true);
   }
 
   Future<_LoadResult<T>> _guard<T>(Future<T> future) async {
@@ -220,3 +119,98 @@ class _LoadResult<T> {
 
   const _LoadResult({this.data, this.error});
 }
+
+// ==========================================
+// New family providers for separate home tabs
+// ==========================================
+
+class HomeListState {
+  final List<ComicModel> comics;
+  final bool isLoading;
+  final bool isLoadMore;
+  final int page;
+  final bool hasMore;
+  final String? error;
+
+  HomeListState({
+    this.comics = const [],
+    this.isLoading = false,
+    this.isLoadMore = false,
+    this.page = 1,
+    this.hasMore = true,
+    this.error,
+  });
+
+  HomeListState copyWith({
+    List<ComicModel>? comics,
+    bool? isLoading,
+    bool? isLoadMore,
+    int? page,
+    bool? hasMore,
+    String? error,
+  }) {
+    return HomeListState(
+      comics: comics ?? this.comics,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadMore: isLoadMore ?? this.isLoadMore,
+      page: page ?? this.page,
+      hasMore: hasMore ?? this.hasMore,
+      error: error,
+    );
+  }
+}
+
+class HomeListNotifier extends StateNotifier<HomeListState> {
+  final HomeRepository _repository;
+  final String _listType;
+
+  HomeListNotifier(this._repository, this._listType) : super(HomeListState()) {
+    loadComics(reset: true);
+  }
+
+  Future<void> loadComics({bool reset = false}) async {
+    if (state.isLoadMore || state.isLoading) return;
+    final isFeatured = _listType == ApiConstants.listFeatured;
+    if (!reset && (!state.hasMore || isFeatured)) return;
+
+    final targetPage = reset ? 1 : state.page + 1;
+    if (reset) {
+      state = state.copyWith(isLoading: true, error: null, page: 1, hasMore: true);
+    } else {
+      state = state.copyWith(isLoadMore: true);
+    }
+
+    try {
+      final List<ComicModel> list;
+      if (isFeatured) {
+        list = await _repository.getHomeComics();
+      } else {
+        list = await _repository.getComicsList(_listType, page: targetPage);
+      }
+      state = state.copyWith(
+        isLoading: false,
+        isLoadMore: false,
+        comics: reset ? list : [...state.comics, ...list],
+        page: targetPage,
+        hasMore: isFeatured ? false : list.isNotEmpty,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        isLoadMore: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  Future<void> refresh() async {
+    await loadComics(reset: true);
+  }
+}
+
+final homeListProvider = StateNotifierProvider.family<HomeListNotifier, HomeListState, String>((ref, listType) {
+  final repo = ref.watch(homeRepositoryProvider);
+  return HomeListNotifier(repo, listType);
+});
+
+

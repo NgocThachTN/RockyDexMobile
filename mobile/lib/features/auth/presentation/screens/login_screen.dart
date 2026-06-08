@@ -32,6 +32,58 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  void _googleLoginPrompt() {
+    final emailController = TextEditingController(text: 'testgoogle@gmail.com');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mô phỏng Google Login'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Nhập email Google bạn muốn mô phỏng để đăng nhập / đăng ký trên hệ thống:',
+              style: TextStyle(fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email Google',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              final email = emailController.text.trim();
+              if (email.isNotEmpty && email.contains('@')) {
+                Navigator.pop(context);
+                ref.read(authProvider.notifier).googleLogin('dev-mock-google-$email');
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Vui lòng nhập đúng định dạng email.'),
+                    backgroundColor: AppColors.error,
+                  ),
+                );
+              }
+            },
+            child: const Text('Đăng nhập'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
@@ -68,7 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // App Logo
-                Icon(
+                const Icon(
                   Icons.auto_stories,
                   size: 80,
                   color: AppColors.primaryBlue,
@@ -83,15 +135,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         fontWeight: FontWeight.w900,
                       ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   'Ứng dụng đọc truyện tranh tối giản & mượt mà',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
                 // Card wrapping fields
                 Card(
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(
+                      color: Theme.of(context).dividerColor.withOpacity(0.5),
+                    ),
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child: Column(
@@ -133,6 +193,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              context.push('/forgot-password');
+                            },
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: const Text(
+                              'Quên mật khẩu?',
+                              style: TextStyle(
+                                color: AppColors.primaryBlue,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -164,10 +246,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           'ĐĂNG NHẬP',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 15,
                             letterSpacing: 1.2,
                           ),
                         ),
+                ),
+                const SizedBox(height: 12),
+
+                // Google Login Button
+                OutlinedButton.icon(
+                  onPressed: authState.isLoading ? null : _googleLoginPrompt,
+                  icon: const Icon(Icons.login_rounded, size: 18),
+                  label: const Text('ĐĂNG NHẬP VỚI GOOGLE'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.primaryBlue,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    side: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
                 ),
                 const SizedBox(height: 16),
 

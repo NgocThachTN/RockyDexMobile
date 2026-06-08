@@ -141,13 +141,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           FadeTransition(
                             opacity: _glowOpacity,
                             child: Container(
-                              width: 160,
-                              height: 160,
+                              width: 120,
+                              height: 120,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: RadialGradient(
                                   colors: [
-                                    primaryColor.withOpacity(isDark ? 0.25 : 0.18),
+                                    primaryColor.withOpacity(isDark ? 0.20 : 0.15),
                                     primaryColor.withOpacity(0.0),
                                   ],
                                 ),
@@ -163,8 +163,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 tag: 'app_logo',
                                 child: Image.asset(
                                   'assets/images/app_icon.png',
-                                  width: 130,
-                                  height: 130,
+                                  width: 90,
+                                  height: 90,
                                   fit: BoxFit.contain,
                                 ),
                               ),
@@ -172,7 +172,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           ),
                         ],
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
                       // App Title
                       FadeTransition(
                         opacity: _titleOpacity,
@@ -181,29 +181,29 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           child: Text(
                             'RockyDex',
                             style: TextStyle(
-                              fontSize: 42,
+                              fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
-                              letterSpacing: 3.0,
+                              letterSpacing: 1.5,
                               shadows: [
                                 Shadow(
-                                  color: primaryColor.withOpacity(0.3),
-                                  offset: const Offset(0, 4),
-                                  blurRadius: 8,
+                                  color: primaryColor.withOpacity(0.2),
+                                  offset: const Offset(0, 2),
+                                  blurRadius: 4,
                                 ),
                               ],
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       // Subtitle
                       FadeTransition(
                         opacity: _subtitleOpacity,
                         child: Text(
                           'Thế giới Manga trong tầm tay',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 13,
                             color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
                             fontStyle: FontStyle.italic,
                             letterSpacing: 0.5,
@@ -224,7 +224,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: FadeTransition(
                   opacity: _subtitleOpacity,
                   child: Text(
-                    'v1.1.2',
+                    'v1.1.3',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark

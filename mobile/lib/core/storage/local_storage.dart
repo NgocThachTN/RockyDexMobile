@@ -67,6 +67,11 @@ class LocalStorage {
     );
   }
 
+  static Future<void> clearFavorites() async {
+    final db = await database;
+    await db.delete('local_favorites');
+  }
+
   static Future<List<Map<String, dynamic>>> getFavorites() async {
     final db = await database;
     return await db.query('local_favorites', orderBy: 'created_at DESC');

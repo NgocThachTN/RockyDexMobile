@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/storage/local_storage.dart';
+import '../../library/data/library_repository.dart';
+import '../../library/presentation/library_providers.dart';
 import '../data/auth_repository.dart';
 import '../domain/user_model.dart';
 
@@ -23,7 +26,7 @@ class AuthState {
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
-      error: error, // Can clear error by passing null explicitly if handled, but simple copy is fine
+      error: error,
       user: user ?? this.user,
     );
   }
@@ -32,14 +35,15 @@ class AuthState {
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final repo = ref.watch(authRepositoryProvider);
   final prefs = ref.watch(sharedPreferencesProvider);
-  return AuthNotifier(repo, prefs);
+  return AuthNotifier(repo, prefs, ref);
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
   final SharedPreferences _prefs;
+  final Ref _ref;
 
-  AuthNotifier(this._repository, this._prefs) : super(AuthState()) {
+  AuthNotifier(this._repository, this._prefs, this._ref) : super(AuthState()) {
     _loadUserFromPrefs();
   }
 
@@ -68,6 +72,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _prefs.setString('user_data', jsonEncode(user.toJson()));
 
       state = AuthState(user: user);
+
+      // Perform background sync on successful login
+      await _ref.read(libraryRepositoryProvider).syncFavorites();
+      await _ref.read(libraryRepositoryProvider).syncHistory();
+
+      // Invalidate providers to reload screen grids
+      _ref.invalidate(libraryFavoritesProvider);
+      _ref.invalidate(libraryHistoryProvider);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
     }
@@ -84,6 +96,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _prefs.setString('user_data', jsonEncode(user.toJson()));
 
       state = AuthState(user: user);
+
+      // Sync local and remote library data
+      await _ref.read(libraryRepositoryProvider).syncFavorites();
+      await _ref.read(libraryRepositoryProvider).syncHistory();
+
+      _ref.invalidate(libraryFavoritesProvider);
+      _ref.invalidate(libraryHistoryProvider);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
+  Future<void> googleLogin(String idToken) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final data = await _repository.googleLogin(idToken);
+      final token = data['token'] as String;
+      final user = UserModel.fromJson(data['user'] as Map<String, dynamic>);
+
+      await _prefs.setString('auth_token', token);
+      await _prefs.setString('user_data', jsonEncode(user.toJson()));
+
+      state = AuthState(user: user);
+
+      // Sync local and remote library data
+      await _ref.read(libraryRepositoryProvider).syncFavorites();
+      await _ref.read(libraryRepositoryProvider).syncHistory();
+
+      _ref.invalidate(libraryFavoritesProvider);
+      _ref.invalidate(libraryHistoryProvider);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString().replaceAll('Exception: ', ''));
     }
@@ -92,7 +134,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     await _prefs.remove('auth_token');
     await _prefs.remove('user_data');
+    
+    // Clear local SQLite favorites and history on logout
+    await LocalStorage.clearHistory();
+    await LocalStorage.clearFavorites();
+    
     state = AuthState();
+
+    // Rebuild lists to empty state
+    _ref.invalidate(libraryFavoritesProvider);
+    _ref.invalidate(libraryHistoryProvider);
   }
 
   Future<void> updateProfile({

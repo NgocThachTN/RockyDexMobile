@@ -44,6 +44,8 @@ class _FakeHomeRepository implements HomeRepository {
   Future<List<ComicModel>> getComicsByCategory(
     String categorySlug, {
     int page = 1,
+    String status = 'all',
+    String year = 'all',
   }) async =>
       [];
 }

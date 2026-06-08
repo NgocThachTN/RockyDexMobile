@@ -64,6 +64,9 @@ class HomeRepository {
         
         if (type == ApiConstants.listFeatured) {
           queryParams['order[followedCount]'] = 'desc';
+        } else if (type == ApiConstants.listMangaDexTopRated) {
+          queryParams['order[rating]'] = 'desc';
+          queryParams['order[followedCount]'] = 'desc';
         } else if (type == ApiConstants.listOngoing) {
           queryParams['status[]'] = 'ongoing';
           queryParams['order[latestUploadedChapter]'] = 'desc';

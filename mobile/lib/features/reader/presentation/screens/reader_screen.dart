@@ -567,6 +567,113 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
+  void _changeChapter(ChapterModel targetChap, ComicDetailInfoModel comic) {
+    context.pushReplacement(
+      '/reader/${widget.comicSlug}/${targetChap.chapterSlug}',
+      extra: {
+        'api_data_url': targetChap.chapterApiData,
+        'comic_name': comic.name,
+        'comic_thumb': comic.thumbUrl,
+        'chapter_name': targetChap.chapterName,
+      },
+    );
+  }
+
+  void _showChapterSelectionSheet(
+    BuildContext context,
+    List<ChapterModel> chapters,
+    int currentIdx,
+    ComicDetailInfoModel comic,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.black.withOpacity(0.95),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.6,
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Danh Sách Chương (${chapters.length})',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Colors.white24, height: 1),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: chapters.length,
+                  itemBuilder: (context, index) {
+                    final chap = chapters[index];
+                    final isCurrent = index == currentIdx;
+
+                    return ListTile(
+                      dense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
+                      tileColor: isCurrent ? AppColors.primaryBlue.withOpacity(0.15) : null,
+                      title: Text(
+                        'Chương ${chap.chapterName}',
+                        style: TextStyle(
+                          color: isCurrent ? AppColors.primaryBlue : Colors.white,
+                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: chap.chapterTitle.isNotEmpty
+                          ? Text(
+                              chap.chapterTitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: isCurrent ? AppColors.primaryBlue.withOpacity(0.7) : Colors.white60,
+                                fontSize: 11,
+                              ),
+                            )
+                          : null,
+                      trailing: isCurrent
+                          ? const Icon(Icons.check, color: AppColors.primaryBlue, size: 18)
+                          : null,
+                      onTap: () {
+                        Navigator.pop(context); // Close bottom sheet
+                        if (!isCurrent) {
+                          _changeChapter(chap, comic);
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildBottomControls(
     BuildContext context,
     ReaderSettings settings,
@@ -580,12 +687,64 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
             color: Colors.black.withOpacity(0.6),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Chapter Navigation (Prev / Next Buttons)
+                // 1. Page Indicator / Progress Slider
+                if (_totalPages > 1)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                    child: Row(
+                      children: [
+                        Text(
+                          '$_currentPage',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                        Expanded(
+                          child: SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              trackHeight: 2.0,
+                              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12.0),
+                              activeTrackColor: AppColors.primaryBlue,
+                              inactiveTrackColor: Colors.white24,
+                              thumbColor: AppColors.primaryBlue,
+                            ),
+                            child: Slider(
+                              value: _currentPage.toDouble().clamp(1.0, _totalPages.toDouble()),
+                              min: 1.0,
+                              max: _totalPages.toDouble(),
+                              onChanged: (value) {
+                                final targetPage = value.round();
+                                setState(() {
+                                  _currentPage = targetPage;
+                                });
+                                if (settings.layout == 'horizontal') {
+                                  _pageController.jumpToPage(targetPage - 1);
+                                } else {
+                                  if (_scrollController.hasClients) {
+                                    final maxScroll = _scrollController.position.maxScrollExtent;
+                                    final targetOffset = (targetPage - 1) / (_totalPages - 1) * maxScroll;
+                                    _scrollController.jumpTo(targetOffset);
+                                  }
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '$_totalPages',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                
+                const SizedBox(height: 4),
+
+                // 2. Chapter Skip Bar & Dropdown Select
                 comicDetailAsync.when(
                   data: (comic) {
                     ServerModel? matchedServer;
@@ -599,94 +758,90 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     final chaptersList = server != null ? server.serverData : <ChapterModel>[];
                     final currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
                     
-                    // Note: chaptersList is ordered from newest to oldest.
-                    // Previous chapter is older (higher index in the list).
-                    // Next chapter is newer (lower index in the list).
                     final hasPrev = currentIdx != -1 && currentIdx < chaptersList.length - 1;
                     final hasNext = currentIdx > 0;
+                    
+                    String currentChapterName = widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
+                    if (currentIdx != -1) {
+                      currentChapterName = chaptersList[currentIdx].chapterName;
+                    }
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Row(
-                        children: [
-                          // Prev Chapter Button
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: hasPrev
-                                  ? () {
-                                      final prevChap = chaptersList[currentIdx + 1];
-                                      context.pushReplacement(
-                                        '/reader/${widget.comicSlug}/${prevChap.chapterSlug}',
-                                        extra: {
-                                          'api_data_url': prevChap.chapterApiData,
-                                          'comic_name': comic.name,
-                                          'comic_thumb': comic.thumbUrl,
-                                          'chapter_name': prevChap.chapterName,
-                                        },
-                                      );
-                                    }
-                                  : null,
-                              icon: Icon(Icons.navigate_before, color: hasPrev ? Colors.white : Colors.white24, size: 20),
-                              label: Text(
-                                'Chương trước',
-                                style: TextStyle(
-                                  color: hasPrev ? Colors.white : Colors.white24,
-                                  fontSize: 12,
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Skip to older chapter
+                        IconButton(
+                          onPressed: hasPrev ? () => _changeChapter(chaptersList[currentIdx + 1], comic) : null,
+                          icon: Icon(
+                            Icons.skip_previous,
+                            color: hasPrev ? Colors.white : Colors.white24,
+                            size: 24,
+                          ),
+                          tooltip: 'Chương trước',
+                        ),
+
+                        // Dropdown chapter selector trigger
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            child: InkWell(
+                              onTap: () {
+                                if (chaptersList.isNotEmpty) {
+                                  _showChapterSelectionSheet(context, chaptersList, currentIdx, comic);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(20),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white10,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.white24, width: 0.8),
                                 ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: hasPrev ? Colors.white38 : Colors.white12),
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        'Chương $currentChapterName',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    const Icon(
+                                      Icons.keyboard_arrow_up,
+                                      color: Colors.white70,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          // Next Chapter Button
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: hasNext
-                                  ? () {
-                                      final nextChap = chaptersList[currentIdx - 1];
-                                      context.pushReplacement(
-                                        '/reader/${widget.comicSlug}/${nextChap.chapterSlug}',
-                                        extra: {
-                                          'api_data_url': nextChap.chapterApiData,
-                                          'comic_name': comic.name,
-                                          'comic_thumb': comic.thumbUrl,
-                                          'chapter_name': nextChap.chapterName,
-                                        },
-                                      );
-                                    }
-                                  : null,
-                              icon: Icon(Icons.navigate_next, color: hasNext ? Colors.white : Colors.white38, size: 20),
-                              label: Text(
-                                'Chương sau',
-                                style: TextStyle(
-                                  color: hasNext ? Colors.white : Colors.white38,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: hasNext ? AppColors.primaryBlue : Colors.white12,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            ),
+                        ),
+
+                        // Skip to newer chapter
+                        IconButton(
+                          onPressed: hasNext ? () => _changeChapter(chaptersList[currentIdx - 1], comic) : null,
+                          icon: Icon(
+                            Icons.skip_next,
+                            color: hasNext ? Colors.white : Colors.white24,
+                            size: 24,
                           ),
-                        ],
-                      ),
+                          tooltip: 'Chương sau',
+                        ),
+                      ],
                     );
                   },
                   loading: () => const SizedBox.shrink(),
                   error: (_, __) => const SizedBox.shrink(),
-                ),
-
-                // Page Indicator
-                Text(
-                  'Trang $_currentPage / $_totalPages',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
               ],
             ),

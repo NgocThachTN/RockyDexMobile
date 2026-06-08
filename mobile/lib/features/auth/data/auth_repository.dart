@@ -62,4 +62,47 @@ class AuthRepository {
       throw Exception(e.response?.data['error'] ?? 'Cập nhật thất bại.');
     }
   }
+
+  Future<Map<String, dynamic>> googleLogin(String idToken) async {
+    try {
+      final response = await _dio.post(
+        '/auth/google',
+        data: {
+          'id_token': idToken,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['error'] ?? 'Đăng nhập bằng Google thất bại.');
+    }
+  }
+
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    try {
+      final response = await _dio.post(
+        '/auth/forgot-password',
+        data: {
+          'email': email,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['error'] ?? 'Yêu cầu mã đặt lại mật khẩu thất bại.');
+    }
+  }
+
+  Future<void> resetPassword(String email, String token, String newPassword) async {
+    try {
+      await _dio.post(
+        '/auth/reset-password',
+        data: {
+          'email': email,
+          'token': token,
+          'new_password': newPassword,
+        },
+      );
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['error'] ?? 'Đặt lại mật khẩu thất bại.');
+    }
+  }
 }
