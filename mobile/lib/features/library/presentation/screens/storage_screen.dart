@@ -88,7 +88,7 @@ class _StorageScreenState extends ConsumerState<StorageScreen> with SingleTicker
             labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
             tabs: const [
-              Tab(text: 'Kệ sách'),
+              Tab(text: 'Yêu thích'),
               Tab(text: 'Lịch sử'),
             ],
           ),

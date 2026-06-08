@@ -163,8 +163,8 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                                 tag: 'app_logo',
                                 child: Image.asset(
                                   'assets/images/app_icon.png',
-                                  width: 90,
-                                  height: 90,
+                                  width: 100,
+                                  height: 100,
                                   fit: BoxFit.contain,
                                 ),
                               ),
@@ -172,7 +172,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
                       // App Title
                       FadeTransition(
                         opacity: _titleOpacity,
@@ -224,7 +224,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: FadeTransition(
                   opacity: _subtitleOpacity,
                   child: Text(
-                    'v1.1.6',
+                    'v1.1.7',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark

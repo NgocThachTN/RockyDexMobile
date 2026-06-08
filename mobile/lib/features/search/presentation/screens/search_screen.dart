@@ -26,6 +26,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     // Initial query passed from home page genre filter if any
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       final extraGenre = GoRouterState.of(context).extra as String?;
       if (extraGenre != null) {
         _searchController.text = extraGenre;
@@ -131,26 +132,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
 
     if (activeChips.isEmpty) {
-      return Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        alignment: Alignment.centerLeft,
-        child: Row(
-          children: [
-            Icon(Icons.info_outline_rounded, size: 14, color: isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.3)),
-            const SizedBox(width: 6),
-            Text(
-              'Chưa áp dụng bộ lọc nào. Chạm vào nút bộ lọc ở góc trên để lọc truyện.',
-              style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.3)),
-            ),
-          ],
-        ),
-      );
+      // Hide the filter bar completely when no filters are active (no blank spaces/dividers)
+      return const SizedBox.shrink();
     }
 
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Row(
         children: [
           Expanded(
@@ -159,7 +147,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               children: activeChips,
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.primaryBlue),
             tooltip: 'Đặt lại bộ lọc',
@@ -177,17 +165,38 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget _buildActiveChip(String label, VoidCallback onClear, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(right: 6.0),
-      child: Chip(
-        label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
-        backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.primaryBlue, width: 0.8),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.primaryBlue.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: AppColors.primaryBlue.withOpacity(0.15),
+            width: 1,
+          ),
         ),
-        padding: EdgeInsets.zero,
-        labelPadding: const EdgeInsets.only(left: 10, right: 2),
-        onDeleted: onClear,
-        deleteIcon: const Icon(Icons.close_rounded, size: 14, color: AppColors.primaryBlue),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryBlue,
+              ),
+            ),
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: onClear,
+              child: const Icon(
+                Icons.close_rounded,
+                size: 13,
+                color: AppColors.primaryBlue,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -202,14 +211,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       appBar: AppBar(
         elevation: 0,
         title: Container(
-          height: 40,
+          height: 42,
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Theme.of(context).dividerColor.withOpacity(0.6),
-              width: 1,
-            ),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF1E1E1E)
+                : Colors.grey.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
@@ -217,7 +224,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 padding: const EdgeInsets.only(left: 12, right: 8),
                 child: Icon(
                   Icons.search_rounded,
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
                   size: 20,
                 ),
               ),
@@ -229,7 +236,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   decoration: InputDecoration(
                     hintText: 'Tìm kiếm truyện trong $sourceName...',
                     hintStyle: TextStyle(
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                      color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.4),
                       fontSize: 14,
                     ),
                     border: InputBorder.none,
@@ -279,7 +286,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       body: Column(
         children: [
           _buildFilterBar(searchState),
-          const Divider(height: 1),
+          // Divider has been removed completely to eliminate the white/gray line
           Expanded(
             child: (searchState.query.isEmpty && !searchState.hasActiveFilter && !searchState.isLoading && searchState.results.isEmpty && searchState.history.isNotEmpty)
                 ? _buildSearchHistory(searchState.history)
@@ -313,24 +320,34 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: history.map((query) {
-              return ActionChip(
-                label: Text(query),
-                onPressed: () {
+              return InkWell(
+                onTap: () {
                   _searchController.text = query;
                   ref.read(searchProvider.notifier).search(query, saveToHistory: true);
                   setState(() {});
                 },
-                backgroundColor: Theme.of(context).cardColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                    width: 1,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF1E1E1E)
+                        : Colors.grey.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    query,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textDarkPrimary
+                          : AppColors.textLightPrimary,
+                    ),
                   ),
                 ),
               );
@@ -401,94 +418,182 @@ class FilterDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(searchProvider);
     final notifier = ref.read(searchProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
+      backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF9F9F9),
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Bộ lọc nâng cao',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Row(
+                    children: [
+                      const Icon(Icons.filter_list_rounded, size: 20, color: AppColors.primaryBlue),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Bộ lọc nâng cao',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                        ),
+                      ),
+                    ],
                   ),
                   TextButton(
                     onPressed: () {
                       notifier.resetFilters();
                     },
-                    child: const Text('Đặt lại', style: TextStyle(color: AppColors.primaryBlue, fontSize: 13)),
+                    style: TextButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'Đặt lại',
+                      style: TextStyle(color: AppColors.primaryBlue, fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
-            // Body (Scrollable)
+            Divider(height: 1, color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04)),
+            
+            // Body (Scrollable cards)
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Sort (MangaDex only)
-                    if (state.isMangaDex) ...[
-                      _buildSectionHeader('Sắp xếp theo'),
-                      const SizedBox(height: 8),
-                      _buildSortSection(state, notifier),
-                      const SizedBox(height: 20),
-                    ],
+                    if (state.isMangaDex)
+                      _buildSectionCard(
+                        context: context,
+                        icon: Icons.sort_rounded,
+                        title: 'Sắp xếp theo',
+                        child: _buildSortSection(state, notifier, context),
+                      ),
 
                     // Country (OTruyen only)
-                    if (!state.isMangaDex) ...[
-                      _buildSectionHeader('Quốc gia'),
-                      const SizedBox(height: 8),
-                      _buildCountrySection(state, notifier),
-                      const SizedBox(height: 20),
-                    ],
+                    if (!state.isMangaDex)
+                      _buildSectionCard(
+                        context: context,
+                        icon: Icons.public_rounded,
+                        title: 'Quốc gia',
+                        child: _buildCountrySection(state, notifier, context),
+                      ),
 
                     // Status
-                    _buildSectionHeader('Tình trạng'),
-                    const SizedBox(height: 8),
-                    _buildStatusSection(state, notifier),
-                    const SizedBox(height: 20),
+                    _buildSectionCard(
+                      context: context,
+                      icon: Icons.hourglass_empty_rounded,
+                      title: 'Tình trạng',
+                      child: _buildStatusSection(state, notifier, context),
+                    ),
 
                     // Publication Year
-                    _buildSectionHeader('Năm phát hành'),
-                    const SizedBox(height: 8),
-                    _buildYearSection(state, notifier),
-                    const SizedBox(height: 20),
+                    _buildSectionCard(
+                      context: context,
+                      icon: Icons.calendar_today_rounded,
+                      title: 'Năm phát hành',
+                      child: _buildYearSection(state, notifier, context),
+                    ),
 
                     // Genres (MangaDex only)
-                    if (state.isMangaDex) ...[
-                      _buildSectionHeader('Thể loại'),
-                      const SizedBox(height: 8),
-                      _buildGenresSection(state, notifier),
-                      const SizedBox(height: 20),
-                    ],
+                    if (state.isMangaDex)
+                      _buildSectionCard(
+                        context: context,
+                        icon: Icons.style_rounded,
+                        title: 'Thể loại',
+                        child: _buildGenresSection(state, notifier, context),
+                      ),
                   ],
                 ),
               ),
             ),
-            const Divider(height: 1),
-            // Apply Button
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close Drawer
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryBlue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  elevation: 0,
-                ),
-                child: const Text('ÁP DỤNG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            Divider(height: 1, color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04)),
+
+            // Footer Action Buttons
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        notifier.resetFilters();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(
+                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        'Đặt lại',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 3,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close Drawer
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryBlue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_rounded, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'ÁP DỤNG',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -497,14 +602,95 @@ class FilterDrawer extends ConsumerWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+  Widget _buildSectionCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.08 : 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: AppColors.primaryBlue),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
     );
   }
 
-  Widget _buildSortSection(SearchState state, SearchNotifier notifier) {
+  Widget _buildCustomChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required BuildContext context,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryBlue
+              : (isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.08)),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryBlue
+                : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04)),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSortSection(SearchState state, SearchNotifier notifier, BuildContext context) {
     final options = [
       {'name': 'Mới cập nhật', 'value': 'latestUploadedChapter'},
       {'name': 'Nổi bật', 'value': 'relevance'},
@@ -516,21 +702,17 @@ class FilterDrawer extends ConsumerWidget {
       runSpacing: 8,
       children: options.map((opt) {
         final isSelected = state.selectedSortBy == opt['value'];
-        return ChoiceChip(
-          showCheckmark: false,
-          label: Text(opt['name']!, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) notifier.updateSortBy(opt['value']!);
-          },
-          selectedColor: AppColors.primaryBlue.withOpacity(0.12),
-          labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+        return _buildCustomChip(
+          label: opt['name']!,
+          isSelected: isSelected,
+          onTap: () => notifier.updateSortBy(opt['value']!),
+          context: context,
         );
       }).toList(),
     );
   }
 
-  Widget _buildCountrySection(SearchState state, SearchNotifier notifier) {
+  Widget _buildCountrySection(SearchState state, SearchNotifier notifier, BuildContext context) {
     final options = [
       {'name': 'Tất cả', 'value': 'all'},
       {'name': 'Nhật Bản', 'value': 'japan'},
@@ -543,21 +725,17 @@ class FilterDrawer extends ConsumerWidget {
       runSpacing: 8,
       children: options.map((opt) {
         final isSelected = state.selectedCountry == opt['value'];
-        return ChoiceChip(
-          showCheckmark: false,
-          label: Text(opt['name']!, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) notifier.updateCountry(opt['value']!);
-          },
-          selectedColor: AppColors.primaryBlue.withOpacity(0.12),
-          labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+        return _buildCustomChip(
+          label: opt['name']!,
+          isSelected: isSelected,
+          onTap: () => notifier.updateCountry(opt['value']!),
+          context: context,
         );
       }).toList(),
     );
   }
 
-  Widget _buildStatusSection(SearchState state, SearchNotifier notifier) {
+  Widget _buildStatusSection(SearchState state, SearchNotifier notifier, BuildContext context) {
     final options = state.isMangaDex
         ? [
             {'name': 'Tất cả', 'value': 'all'},
@@ -577,21 +755,17 @@ class FilterDrawer extends ConsumerWidget {
       runSpacing: 8,
       children: options.map((opt) {
         final isSelected = state.selectedStatus == opt['value'];
-        return ChoiceChip(
-          showCheckmark: false,
-          label: Text(opt['name']!, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-          selected: isSelected,
-          onSelected: (selected) {
-            if (selected) notifier.updateStatus(opt['value']!);
-          },
-          selectedColor: AppColors.primaryBlue.withOpacity(0.12),
-          labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+        return _buildCustomChip(
+          label: opt['name']!,
+          isSelected: isSelected,
+          onTap: () => notifier.updateStatus(opt['value']!),
+          context: context,
         );
       }).toList(),
     );
   }
 
-  Widget _buildYearSection(SearchState state, SearchNotifier notifier) {
+  Widget _buildYearSection(SearchState state, SearchNotifier notifier, BuildContext context) {
     final List<Map<String, String>> quickYears = [
       {'name': 'Mọi năm', 'value': 'all'},
     ];
@@ -613,34 +787,31 @@ class FilterDrawer extends ConsumerWidget {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: quickYears.map((opt) {
             final isSelected = state.selectedYear == opt['value'];
-            return ChoiceChip(
-              showCheckmark: false,
-              label: Text(opt['name']!, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) notifier.updateYear(opt['value']!);
-              },
-              selectedColor: AppColors.primaryBlue.withOpacity(0.12),
-              labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+            return _buildCustomChip(
+              label: opt['name']!,
+              isSelected: isSelected,
+              onTap: () => notifier.updateYear(opt['value']!),
+              context: context,
             );
           }).toList(),
         ),
         if (state.isMangaDex) ...[
-          const SizedBox(height: 8),
-          _buildOlderYearDropdown(state, notifier),
+          const SizedBox(height: 12),
+          _buildOlderYearDropdown(state, notifier, context),
         ],
       ],
     );
   }
 
-  Widget _buildOlderYearDropdown(SearchState state, SearchNotifier notifier) {
+  Widget _buildOlderYearDropdown(SearchState state, SearchNotifier notifier, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentYear = DateTime.now().year;
     final startYear = currentYear - 8;
     final List<String> olderYears = [];
@@ -651,27 +822,47 @@ class FilterDrawer extends ConsumerWidget {
     final isSelectedValueInOlder = olderYears.contains(state.selectedYear);
     final String dropdownValue = isSelectedValueInOlder ? state.selectedYear : 'Năm khác...';
 
-    return DropdownButtonFormField<String>(
-      decoration: const InputDecoration(
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-        isDense: true,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04),
+          width: 1,
+        ),
       ),
-      value: dropdownValue,
-      style: const TextStyle(fontSize: 13, color: AppColors.primaryBlue),
-      items: [
-        const DropdownMenuItem(value: 'Năm khác...', child: Text('Năm phát hành khác...', style: TextStyle(color: Colors.grey))),
-        ...olderYears.map((y) => DropdownMenuItem(value: y, child: Text('Năm $y'))),
-      ],
-      onChanged: (val) {
-        if (val != null && val != 'Năm khác...') {
-          notifier.updateYear(val);
-        }
-      },
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: dropdownValue,
+          isExpanded: true,
+          dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+          icon: const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 13,
+            color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+          ),
+          items: [
+            const DropdownMenuItem(
+              value: 'Năm khác...',
+              child: Text('Năm phát hành khác...', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            ),
+            ...olderYears.map((y) => DropdownMenuItem(
+              value: y,
+              child: Text('Năm $y', style: const TextStyle(fontSize: 13)),
+            )),
+          ],
+          onChanged: (val) {
+            if (val != null && val != 'Năm khác...') {
+              notifier.updateYear(val);
+            }
+          },
+        ),
+      ),
     );
   }
 
-  Widget _buildGenresSection(SearchState state, SearchNotifier notifier) {
+  Widget _buildGenresSection(SearchState state, SearchNotifier notifier, BuildContext context) {
     final Map<String, String> mangaDexGenres = {
       '391b0423-d847-456f-aff0-8b0cfc03066b': 'Hành động',
       '87cc8738-c691-4e19-b903-94c5cdad9c15': 'Phiêu lưu',
@@ -691,19 +882,15 @@ class FilterDrawer extends ConsumerWidget {
     };
 
     return Wrap(
-      spacing: 6,
-      runSpacing: 6,
+      spacing: 8,
+      runSpacing: 8,
       children: mangaDexGenres.entries.map((entry) {
         final isSelected = state.selectedGenres.contains(entry.key);
-        return FilterChip(
-          showCheckmark: false,
-          label: Text(entry.value, style: TextStyle(fontSize: 11.5, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-          selected: isSelected,
-          onSelected: (selected) {
-            notifier.toggleGenre(entry.key);
-          },
-          selectedColor: AppColors.primaryBlue.withOpacity(0.12),
-          labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+        return _buildCustomChip(
+          label: entry.value,
+          isSelected: isSelected,
+          onTap: () => notifier.toggleGenre(entry.key),
+          context: context,
         );
       }).toList(),
     );

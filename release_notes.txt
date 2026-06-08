@@ -1,3 +1,11 @@
+Cập nhật v1.1.7:
+- Nâng cấp phiên bản lên v1.1.7+21.
+- Thiết kế lại Trang cá nhân (Cá nhân) hiện đại: Gom nhóm các cài đặt vào thẻ Panel bo góc, loại bỏ các dòng kẻ ngang Divider, đồng bộ hóa biểu tượng cài đặt với nền xanh mờ thương hiệu.
+- Bọc thông tin người dùng ở Trang cá nhân trong thẻ Card gradient đổ bóng cao cấp.
+- Đổi tên Tab đầu tiên trong Thư viện từ "Kệ sách" thành "Yêu thích", phân chia trực quan thành "Yêu thích" và "Lịch sử".
+- Thiết kế lại Giao diện Tìm kiếm & Bộ lọc: Hộp tìm kiếm phẳng bo góc, tự động ẩn thanh bộ lọc khi trống (xóa dòng chữ thông báo chưa áp dụng bộ lọc), thiết kế lại Drawer bộ lọc với custom animated chips và dropdown năm phát hành phẳng.
+- Điều chỉnh kích thước logo và thu hẹp khoảng cách với tên app trên màn hình chào (Splash Screen) cân đối và chuyên nghiệp.
+
 Cập nhật v1.1.6:
 - Nâng cấp phiên bản lên v1.1.6+20.
 - Hợp nhất Lịch sử và Yêu thích vào một trang Lưu trữ (Kệ sách & Lịch sử) dạng Tab tiện lợi.
