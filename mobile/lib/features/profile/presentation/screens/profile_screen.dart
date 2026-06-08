@@ -96,12 +96,12 @@ class ProfileScreen extends ConsumerWidget {
                       dense: true,
                       leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue, size: 20),
                       title: const Text('Về RockyDex', style: TextStyle(fontSize: 13)),
-                      subtitle: const Text('Phiên bản v1.1.4', style: TextStyle(fontSize: 11)),
+                      subtitle: const Text('Phiên bản v1.1.5', style: TextStyle(fontSize: 11)),
                       onTap: () {
                         showAboutDialog(
                           context: context,
                           applicationName: 'RockyDex',
-                          applicationVersion: '1.1.4',
+                          applicationVersion: '1.1.5',
                           applicationIcon: Image.asset('assets/images/app_icon.png', width: 48, height: 48, errorBuilder: (_, __, ___) => const Icon(Icons.auto_stories, size: 48, color: AppColors.primaryBlue)),
                           children: const [
                             Text('Ứng dụng đọc truyện tranh tối giản, nhanh chóng và mượt mà cho người dùng Việt Nam. Hợp phong thủy Xanh Dương - Xám. Dữ liệu tự động đồng bộ giữa Local DB và Cloud Server.'),

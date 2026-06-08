@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../../../core/constants/colors.dart';
 import '../auth_notifier.dart';
 
@@ -32,7 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  void _googleLoginPrompt() {
+  void _showMockGoogleLoginDialog() {
     final emailController = TextEditingController(text: 'testgoogle@gmail.com');
     showDialog(
       context: context,
@@ -82,6 +83,36 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
+      final GoogleSignInAccount? account = await googleSignIn.signIn();
+      if (account == null) {
+        // User cancelled the sign-in flow
+        return;
+      }
+      final GoogleSignInAuthentication authentication = await account.authentication;
+      final String? idToken = authentication.idToken;
+      if (idToken == null) {
+        throw Exception('Không lấy được ID Token từ Google.');
+      }
+      await ref.read(authProvider.notifier).googleLogin(idToken);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể mở Google Sign-In ($error). Chuyển sang mô phỏng.'),
+            backgroundColor: AppColors.primaryBlue,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        _showMockGoogleLoginDialog();
+      }
+    }
   }
 
   @override
@@ -268,7 +299,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // Google Login Button
                 OutlinedButton.icon(
-                  onPressed: authState.isLoading ? null : _googleLoginPrompt,
+                  onPressed: authState.isLoading ? null : _handleGoogleSignIn,
                   icon: const Icon(Icons.login_rounded, size: 18),
                   label: const Text('ĐĂNG NHẬP VỚI GOOGLE'),
                   style: OutlinedButton.styleFrom(
