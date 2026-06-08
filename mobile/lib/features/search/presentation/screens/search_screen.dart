@@ -54,311 +54,140 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
-  void _showCountryFilterPicker(BuildContext context, SearchState state) {
-    final countries = [
-      {'name': 'Tất cả quốc gia', 'value': 'all'},
-      {'name': 'Nhật Bản (Manga)', 'value': 'japan'},
-      {'name': 'Trung Quốc (Manhua)', 'value': 'china'},
-      {'name': 'Hàn Quốc (Manhwa)', 'value': 'korea'},
-      {'name': 'Việt Nam', 'value': 'vietnam'},
-    ];
-
-    _showPicker(
-      context,
-      title: 'Chọn Quốc Gia',
-      options: countries,
-      selectedValue: state.selectedCountry,
-      onSelected: (val) {
-        ref.read(searchProvider.notifier).updateCountry(val);
-      },
-    );
-  }
-
-  void _showStatusFilterPicker(BuildContext context, SearchState state) {
+  Widget _buildFilterBar(SearchState state) {
+    final notifier = ref.read(searchProvider.notifier);
     final isMangaDex = state.isMangaDex;
-    final List<Map<String, String>> statuses = isMangaDex
-        ? [
-            {'name': 'Mọi tình trạng', 'value': 'all'},
-            {'name': 'Đang tiến hành', 'value': 'ongoing'},
-            {'name': 'Đã hoàn thành', 'value': 'completed'},
-            {'name': 'Tạm ngưng', 'value': 'hiatus'},
-            {'name': 'Đã hủy', 'value': 'cancelled'},
-          ]
-        : [
-            {'name': 'Mọi tình trạng', 'value': 'all'},
-            {'name': 'Đang phát hành', 'value': 'ongoing'},
-            {'name': 'Hoàn thành', 'value': 'completed'},
-            {'name': 'Sắp ra mắt', 'value': 'coming_soon'},
-          ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    _showPicker(
-      context,
-      title: 'Chọn Tình Trạng',
-      options: statuses,
-      selectedValue: state.selectedStatus,
-      onSelected: (val) {
-        ref.read(searchProvider.notifier).updateStatus(val);
-      },
-    );
-  }
+    final List<Widget> activeChips = [];
 
-  void _showYearFilterPicker(BuildContext context, SearchState state) {
-    final List<Map<String, String>> years = [
-      {'name': 'Mọi năm', 'value': 'all'},
-    ];
-
-    if (state.isMangaDex) {
-      final currentYear = DateTime.now().year;
-      for (int y = currentYear; y >= 1970; y--) {
-        years.add({'name': 'Năm $y', 'value': y.toString()});
-      }
-    } else {
-      years.addAll([
-        {'name': 'Năm 2026', 'value': '2026'},
-        {'name': 'Năm 2025', 'value': '2025'},
-        {'name': 'Năm 2024', 'value': '2024'},
-        {'name': 'Năm 2023', 'value': '2023'},
-        {'name': 'Năm 2022', 'value': '2022'},
-        {'name': 'Năm 2021', 'value': '2021'},
-        {'name': 'Trước 2021', 'value': 'before_2021'},
-      ]);
+    // Country (OTruyen only)
+    if (!isMangaDex && state.selectedCountry != 'all') {
+      final label = {
+        'japan': 'Nhật Bản',
+        'china': 'Trung Quốc',
+        'korea': 'Hàn Quốc',
+        'vietnam': 'Việt Nam',
+      }[state.selectedCountry] ?? state.selectedCountry;
+      activeChips.add(_buildActiveChip('Quốc gia: $label', () => notifier.updateCountry('all'), isDark));
     }
 
-    _showPicker(
-      context,
-      title: 'Chọn Năm Phát Hành',
-      options: years,
-      selectedValue: state.selectedYear,
-      onSelected: (val) {
-        ref.read(searchProvider.notifier).updateYear(val);
-      },
-    );
-  }
+    // Status
+    if (state.selectedStatus != 'all') {
+      final label = isMangaDex
+          ? {
+              'ongoing': 'Đang tiến hành',
+              'completed': 'Đã hoàn thành',
+              'hiatus': 'Tạm ngưng',
+              'cancelled': 'Đã hủy',
+            }[state.selectedStatus]
+          : {
+              'ongoing': 'Đang phát hành',
+              'completed': 'Hoàn thành',
+              'coming_soon': 'Sắp ra mắt',
+            }[state.selectedStatus];
+      activeChips.add(_buildActiveChip('Trạng thái: $label', () => notifier.updateStatus('all'), isDark));
+    }
 
-  void _showSortFilterPicker(BuildContext context, SearchState state) {
-    final sortOptions = [
-      {'name': 'Mới cập nhật', 'value': 'latestUploadedChapter'},
-      {'name': 'Nổi bật', 'value': 'relevance'},
-      {'name': 'Đánh giá cao nhất', 'value': 'rating'},
-      {'name': 'Theo dõi nhiều nhất', 'value': 'followedCount'},
-    ];
+    // Year
+    if (state.selectedYear != 'all') {
+      final label = state.selectedYear == 'before_2021' ? 'Trước 2021' : 'Năm ${state.selectedYear}';
+      activeChips.add(_buildActiveChip(label, () => notifier.updateYear('all'), isDark));
+    }
 
-    _showPicker(
-      context,
-      title: 'Chọn Sắp Xếp',
-      options: sortOptions,
-      selectedValue: state.selectedSortBy,
-      onSelected: (val) {
-        ref.read(searchProvider.notifier).updateSortBy(val);
-      },
-    );
-  }
+    // Sort (MangaDex only)
+    if (isMangaDex && state.selectedSortBy != 'latestUploadedChapter') {
+      final label = {
+        'relevance': 'Nổi bật',
+        'rating': 'Đánh giá cao',
+        'followedCount': 'Theo dõi nhiều',
+      }[state.selectedSortBy] ?? state.selectedSortBy;
+      activeChips.add(_buildActiveChip('Sắp xếp: $label', () => notifier.updateSortBy('latestUploadedChapter'), isDark));
+    }
 
-  void _showPicker(
-    BuildContext context, {
-    required String title,
-    required List<Map<String, String>> options,
-    required String selectedValue,
-    required ValueChanged<String> onSelected,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
+    // Genres (MangaDex only)
+    if (isMangaDex && state.selectedGenres.isNotEmpty) {
+      final Map<String, String> mangaDexGenres = {
+        '391b0423-d847-456f-aff0-8b0cfc03066b': 'Hành động',
+        '87cc8738-c691-4e19-b903-94c5cdad9c15': 'Phiêu lưu',
+        '4d32cc48-9f00-4cca-9b5a-a839f0764984': 'Hài hước',
+        'b9cafd37-9a11-4fa3-b78a-c778e521955b': 'Kịch tính',
+        'cdc58593-abb3-4ddc-8d40-6aab3f661725': 'Giả tưởng',
+        'cdad7e68-1419-41ed-bd5e-4b2073d81b9b': 'Kinh dị',
+        'ee968100-4191-4968-93d3-f57e75581a31': 'Bí ẩn',
+        '423e2eae-977e-4c4b-98ee-99d613c2e787': 'Lãng mạn',
+        '256c8064-7c37-4b30-be3f-2735d4d97c6c': 'Sci-Fi',
+        'e5301a23-ebd9-49dd-a0cb-2add944c7fe9': 'Đời thường',
+        '6997739f-d546-4178-831d-21d0f140bacb': 'Thể thao',
+        'eabc5477-179c-48b0-986d-96a87f4d482a': 'Siêu nhiên',
+        '5ca13ee5-ae6c-490f-89b2-ed2f8012ccb6': 'Giật gân',
+        'f8f62933-140f-4dd3-a2d3-685c2e311cd0': 'Isekai',
+        'e197df38-d0e7-43b5-9b09-2842d0c326dd': 'Webtoon',
+      };
+      for (final gid in state.selectedGenres) {
+        final name = mangaDexGenres[gid] ?? 'Thể loại';
+        activeChips.add(_buildActiveChip(name, () => notifier.toggleGenre(gid), isDark));
+      }
+    }
+
+    if (activeChips.isEmpty) {
+      return Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, size: 14, color: isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.3)),
+            const SizedBox(width: 6),
+            Text(
+              'Chưa áp dụng bộ lọc nào. Chạm vào nút bộ lọc ở góc trên để lọc truyện.',
+              style: TextStyle(fontSize: 11.5, color: isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.3)),
+            ),
+          ],
         ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              const Divider(height: 1),
-              Flexible(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: options.map((opt) {
-                    final isSelected = opt['value'] == selectedValue;
-                    return ListTile(
-                      title: Text(
-                        opt['name']!,
-                        style: TextStyle(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? AppColors.primaryBlue : null,
-                        ),
-                      ),
-                      trailing: isSelected
-                          ? const Icon(Icons.check_circle, color: AppColors.primaryBlue)
-                          : null,
-                      onTap: () {
-                        onSelected(opt['value']!);
-                        Navigator.pop(context);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFilterBar(SearchState state) {
-    final isMangaDex = state.isMangaDex;
-    final hasActiveFilter = state.selectedCountry != 'all' ||
-        state.selectedStatus != 'all' ||
-        state.selectedYear != 'all' ||
-        (isMangaDex && state.selectedSortBy != 'latestUploadedChapter');
-
-    final countryLabel = {
-      'all': 'Tất cả quốc gia',
-      'japan': 'Nhật Bản (Manga)',
-      'china': 'Trung Quốc (Manhua)',
-      'korea': 'Hàn Quốc (Manhwa)',
-      'vietnam': 'Việt Nam',
-    }[state.selectedCountry]!;
-
-    final statusLabel = isMangaDex
-        ? {
-            'all': 'Mọi tình trạng',
-            'ongoing': 'Đang tiến hành',
-            'completed': 'Đã hoàn thành',
-            'hiatus': 'Tạm ngưng',
-            'cancelled': 'Đã hủy',
-          }[state.selectedStatus]!
-        : {
-            'all': 'Mọi tình trạng',
-            'ongoing': 'Đang phát hành',
-            'completed': 'Hoàn thành',
-            'coming_soon': 'Sắp ra mắt',
-          }[state.selectedStatus]!;
-
-    final yearLabel = state.selectedYear == 'all'
-        ? 'Mọi năm'
-        : (state.selectedYear == 'before_2021' ? 'Trước 2021' : 'Năm ${state.selectedYear}');
-
-    final sortLabel = {
-      'latestUploadedChapter': 'Mới cập nhật',
-      'relevance': 'Nổi bật',
-      'rating': 'Đánh giá cao',
-      'followedCount': 'Theo dõi nhiều',
-    }[state.selectedSortBy] ?? 'Sắp xếp';
+      );
+    }
 
     return Container(
-      height: 44,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Row(
         children: [
           Expanded(
             child: ListView(
               scrollDirection: Axis.horizontal,
-              children: [
-                if (!isMangaDex) ...[
-                  _buildFilterChip(
-                    context,
-                    label: countryLabel,
-                    isActive: state.selectedCountry != 'all',
-                    onTap: () => _showCountryFilterPicker(context, state),
-                  ),
-                  const SizedBox(width: 8),
-                ],
-                _buildFilterChip(
-                  context,
-                  label: statusLabel,
-                  isActive: state.selectedStatus != 'all',
-                  onTap: () => _showStatusFilterPicker(context, state),
-                ),
-                const SizedBox(width: 8),
-                _buildFilterChip(
-                  context,
-                  label: yearLabel,
-                  isActive: state.selectedYear != 'all',
-                  onTap: () => _showYearFilterPicker(context, state),
-                ),
-                if (isMangaDex) ...[
-                  const SizedBox(width: 8),
-                  _buildFilterChip(
-                    context,
-                    label: sortLabel,
-                    isActive: state.selectedSortBy != 'latestUploadedChapter',
-                    onTap: () => _showSortFilterPicker(context, state),
-                  ),
-                ],
-              ],
+              children: activeChips,
             ),
           ),
-          if (hasActiveFilter) ...[
-            const SizedBox(width: 4),
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, size: 20, color: AppColors.primaryBlue),
-              tooltip: 'Đặt lại bộ lọc',
-              onPressed: () {
-                ref.read(searchProvider.notifier).resetFilters();
-              },
-            ),
-          ]
+          const SizedBox(width: 4),
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.primaryBlue),
+            tooltip: 'Đặt lại bộ lọc',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () {
+              notifier.resetFilters();
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(
-    BuildContext context, {
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isActive
-              ? AppColors.primaryBlue.withOpacity(0.12)
-              : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
+  Widget _buildActiveChip(String label, VoidCallback onClear, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 6.0),
+      child: Chip(
+        label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryBlue)),
+        backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isActive
-                ? AppColors.primaryBlue
-                : (isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.18)),
-            width: 1,
-          ),
+          side: const BorderSide(color: AppColors.primaryBlue, width: 0.8),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                color: isActive
-                    ? AppColors.primaryBlue
-                    : (isDark ? Colors.white70 : Colors.black87),
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 16,
-              color: isActive ? AppColors.primaryBlue : Colors.grey,
-            ),
-          ],
-        ),
+        padding: EdgeInsets.zero,
+        labelPadding: const EdgeInsets.only(left: 10, right: 2),
+        onDeleted: onClear,
+        deleteIcon: const Icon(Icons.close_rounded, size: 14, color: AppColors.primaryBlue),
       ),
     );
   }
@@ -434,13 +263,25 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ],
           ),
         ),
+        actions: [
+          Builder(
+            builder: (context) => IconButton(
+              icon: const Icon(Icons.filter_list_rounded, color: AppColors.primaryBlue),
+              tooltip: 'Bộ lọc nâng cao',
+              onPressed: () {
+                Scaffold.of(context).openEndDrawer();
+              },
+            ),
+          ),
+        ],
       ),
+      endDrawer: const FilterDrawer(),
       body: Column(
         children: [
-          if (_searchController.text.isNotEmpty || searchState.isMangaDex)
-            _buildFilterBar(searchState),
+          _buildFilterBar(searchState),
+          const Divider(height: 1),
           Expanded(
-            child: _searchController.text.isEmpty && searchState.results.isEmpty && searchState.history.isNotEmpty
+            child: (searchState.query.isEmpty && !searchState.hasActiveFilter && !searchState.isLoading && searchState.results.isEmpty && searchState.history.isNotEmpty)
                 ? _buildSearchHistory(searchState.history)
                 : _buildSearchResults(searchState),
           ),
@@ -520,7 +361,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     final filteredList = state.filteredResults;
 
-    if (filteredList.isEmpty && _searchController.text.isNotEmpty) {
+    if (filteredList.isEmpty) {
       return const Center(
         child: Text('Không tìm thấy kết quả phù hợp'),
       );
@@ -549,6 +390,322 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         final comic = filteredList[index];
         return ComicGridCard(comic: comic);
       },
+    );
+  }
+}
+
+class FilterDrawer extends ConsumerWidget {
+  const FilterDrawer({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(searchProvider);
+    final notifier = ref.read(searchProvider.notifier);
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Bộ lọc nâng cao',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      notifier.resetFilters();
+                    },
+                    child: const Text('Đặt lại', style: TextStyle(color: AppColors.primaryBlue, fontSize: 13)),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            // Body (Scrollable)
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Sort (MangaDex only)
+                    if (state.isMangaDex) ...[
+                      _buildSectionHeader('Sắp xếp theo'),
+                      const SizedBox(height: 8),
+                      _buildSortSection(state, notifier),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Country (OTruyen only)
+                    if (!state.isMangaDex) ...[
+                      _buildSectionHeader('Quốc gia'),
+                      const SizedBox(height: 8),
+                      _buildCountrySection(state, notifier),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Status
+                    _buildSectionHeader('Tình trạng'),
+                    const SizedBox(height: 8),
+                    _buildStatusSection(state, notifier),
+                    const SizedBox(height: 20),
+
+                    // Publication Year
+                    _buildSectionHeader('Năm phát hành'),
+                    const SizedBox(height: 8),
+                    _buildYearSection(state, notifier),
+                    const SizedBox(height: 20),
+
+                    // Genres (MangaDex only)
+                    if (state.isMangaDex) ...[
+                      _buildSectionHeader('Thể loại'),
+                      const SizedBox(height: 8),
+                      _buildGenresSection(state, notifier),
+                      const SizedBox(height: 20),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            // Apply Button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close Drawer
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryBlue,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+                child: const Text('ÁP DỤNG', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.grey),
+    );
+  }
+
+  Widget _buildSortSection(SearchState state, SearchNotifier notifier) {
+    final options = [
+      {'name': 'Mới cập nhật', 'value': 'latestUploadedChapter'},
+      {'name': 'Nổi bật', 'value': 'relevance'},
+      {'name': 'Đánh giá cao', 'value': 'rating'},
+      {'name': 'Theo dõi nhiều', 'value': 'followedCount'},
+    ];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: options.map((opt) {
+        final isSelected = state.selectedSortBy == opt['value'];
+        return ChoiceChip(
+          showCheckmark: false,
+          label: Text(opt['name']!, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+          selected: isSelected,
+          onSelected: (selected) {
+            if (selected) notifier.updateSortBy(opt['value']!);
+          },
+          selectedColor: AppColors.primaryBlue.withOpacity(0.12),
+          labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildCountrySection(SearchState state, SearchNotifier notifier) {
+    final options = [
+      {'name': 'Tất cả', 'value': 'all'},
+      {'name': 'Nhật Bản', 'value': 'japan'},
+      {'name': 'Trung Quốc', 'value': 'china'},
+      {'name': 'Hàn Quốc', 'value': 'korea'},
+      {'name': 'Việt Nam', 'value': 'vietnam'},
+    ];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: options.map((opt) {
+        final isSelected = state.selectedCountry == opt['value'];
+        return ChoiceChip(
+          showCheckmark: false,
+          label: Text(opt['name']!, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+          selected: isSelected,
+          onSelected: (selected) {
+            if (selected) notifier.updateCountry(opt['value']!);
+          },
+          selectedColor: AppColors.primaryBlue.withOpacity(0.12),
+          labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildStatusSection(SearchState state, SearchNotifier notifier) {
+    final options = state.isMangaDex
+        ? [
+            {'name': 'Tất cả', 'value': 'all'},
+            {'name': 'Đang tiến hành', 'value': 'ongoing'},
+            {'name': 'Hoàn thành', 'value': 'completed'},
+            {'name': 'Tạm ngưng', 'value': 'hiatus'},
+            {'name': 'Đã hủy', 'value': 'cancelled'},
+          ]
+        : [
+            {'name': 'Tất cả', 'value': 'all'},
+            {'name': 'Đang phát hành', 'value': 'ongoing'},
+            {'name': 'Hoàn thành', 'value': 'completed'},
+            {'name': 'Sắp ra mắt', 'value': 'coming_soon'},
+          ];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: options.map((opt) {
+        final isSelected = state.selectedStatus == opt['value'];
+        return ChoiceChip(
+          showCheckmark: false,
+          label: Text(opt['name']!, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+          selected: isSelected,
+          onSelected: (selected) {
+            if (selected) notifier.updateStatus(opt['value']!);
+          },
+          selectedColor: AppColors.primaryBlue.withOpacity(0.12),
+          labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildYearSection(SearchState state, SearchNotifier notifier) {
+    final List<Map<String, String>> quickYears = [
+      {'name': 'Mọi năm', 'value': 'all'},
+    ];
+    if (state.isMangaDex) {
+      final currentYear = DateTime.now().year;
+      for (int y = currentYear; y >= currentYear - 7; y--) {
+        quickYears.add({'name': '$y', 'value': y.toString()});
+      }
+    } else {
+      quickYears.addAll([
+        {'name': '2026', 'value': '2026'},
+        {'name': '2025', 'value': '2025'},
+        {'name': '2024', 'value': '2024'},
+        {'name': '2023', 'value': '2023'},
+        {'name': '2022', 'value': '2022'},
+        {'name': '2021', 'value': '2021'},
+        {'name': 'Trước 2021', 'value': 'before_2021'},
+      ]);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: quickYears.map((opt) {
+            final isSelected = state.selectedYear == opt['value'];
+            return ChoiceChip(
+              showCheckmark: false,
+              label: Text(opt['name']!, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) notifier.updateYear(opt['value']!);
+              },
+              selectedColor: AppColors.primaryBlue.withOpacity(0.12),
+              labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+            );
+          }).toList(),
+        ),
+        if (state.isMangaDex) ...[
+          const SizedBox(height: 8),
+          _buildOlderYearDropdown(state, notifier),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildOlderYearDropdown(SearchState state, SearchNotifier notifier) {
+    final currentYear = DateTime.now().year;
+    final startYear = currentYear - 8;
+    final List<String> olderYears = [];
+    for (int y = startYear; y >= 1970; y--) {
+      olderYears.add(y.toString());
+    }
+
+    final isSelectedValueInOlder = olderYears.contains(state.selectedYear);
+    final String dropdownValue = isSelectedValueInOlder ? state.selectedYear : 'Năm khác...';
+
+    return DropdownButtonFormField<String>(
+      decoration: const InputDecoration(
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
+        isDense: true,
+      ),
+      value: dropdownValue,
+      style: const TextStyle(fontSize: 13, color: AppColors.primaryBlue),
+      items: [
+        const DropdownMenuItem(value: 'Năm khác...', child: Text('Năm phát hành khác...', style: TextStyle(color: Colors.grey))),
+        ...olderYears.map((y) => DropdownMenuItem(value: y, child: Text('Năm $y'))),
+      ],
+      onChanged: (val) {
+        if (val != null && val != 'Năm khác...') {
+          notifier.updateYear(val);
+        }
+      },
+    );
+  }
+
+  Widget _buildGenresSection(SearchState state, SearchNotifier notifier) {
+    final Map<String, String> mangaDexGenres = {
+      '391b0423-d847-456f-aff0-8b0cfc03066b': 'Hành động',
+      '87cc8738-c691-4e19-b903-94c5cdad9c15': 'Phiêu lưu',
+      '4d32cc48-9f00-4cca-9b5a-a839f0764984': 'Hài hước',
+      'b9cafd37-9a11-4fa3-b78a-c778e521955b': 'Kịch tính',
+      'cdc58593-abb3-4ddc-8d40-6aab3f661725': 'Giả tưởng',
+      'cdad7e68-1419-41ed-bd5e-4b2073d81b9b': 'Kinh dị',
+      'ee968100-4191-4968-93d3-f57e75581a31': 'Bí ẩn',
+      '423e2eae-977e-4c4b-98ee-99d613c2e787': 'Lãng mạn',
+      '256c8064-7c37-4b30-be3f-2735d4d97c6c': 'Sci-Fi',
+      'e5301a23-ebd9-49dd-a0cb-2add944c7fe9': 'Đời thường',
+      '6997739f-d546-4178-831d-21d0f140bacb': 'Thể thao',
+      'eabc5477-179c-48b0-986d-96a87f4d482a': 'Siêu nhiên',
+      '5ca13ee5-ae6c-490f-89b2-ed2f8012ccb6': 'Giật gân',
+      'f8f62933-140f-4dd3-a2d3-685c2e311cd0': 'Isekai',
+      'e197df38-d0e7-43b5-9b09-2842d0c326dd': 'Webtoon',
+    };
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: mangaDexGenres.entries.map((entry) {
+        final isSelected = state.selectedGenres.contains(entry.key);
+        return FilterChip(
+          showCheckmark: false,
+          label: Text(entry.value, style: TextStyle(fontSize: 11.5, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+          selected: isSelected,
+          onSelected: (selected) {
+            notifier.toggleGenre(entry.key);
+          },
+          selectedColor: AppColors.primaryBlue.withOpacity(0.12),
+          labelStyle: TextStyle(color: isSelected ? AppColors.primaryBlue : null),
+        );
+      }).toList(),
     );
   }
 }

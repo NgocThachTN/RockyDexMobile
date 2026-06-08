@@ -20,6 +20,7 @@ class SearchState {
   final String selectedStatus;  // 'all', 'ongoing', 'completed'
   final String selectedYear;    // 'all', '2026', '2025', '2024', '2023', '2022', '2021', 'before_2021'
   final String selectedSortBy;  // 'latestUploadedChapter', 'relevance', 'rating', 'followedCount'
+  final List<String> selectedGenres; // List of MangaDex Tag/Genre UUIDs
 
   SearchState({
     this.query = '',
@@ -36,7 +37,20 @@ class SearchState {
     this.selectedStatus = 'all',
     this.selectedYear = 'all',
     this.selectedSortBy = 'latestUploadedChapter',
+    this.selectedGenres = const [],
   });
+
+  bool get hasActiveFilter {
+    if (isMangaDex) {
+      return selectedStatus != 'all' ||
+          selectedYear != 'all' ||
+          selectedSortBy != 'latestUploadedChapter' ||
+          selectedGenres.isNotEmpty;
+    }
+    return selectedCountry != 'all' ||
+        selectedStatus != 'all' ||
+        selectedYear != 'all';
+  }
 
   List<ComicModel> get filteredResults {
     if (isMangaDex) {
@@ -106,6 +120,7 @@ class SearchState {
     String? selectedStatus,
     String? selectedYear,
     String? selectedSortBy,
+    List<String>? selectedGenres,
   }) {
     return SearchState(
       query: query ?? this.query,
@@ -122,6 +137,7 @@ class SearchState {
       selectedStatus: selectedStatus ?? this.selectedStatus,
       selectedYear: selectedYear ?? this.selectedYear,
       selectedSortBy: selectedSortBy ?? this.selectedSortBy,
+      selectedGenres: selectedGenres ?? this.selectedGenres,
     );
   }
 }
@@ -172,6 +188,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         year: state.selectedYear,
         status: state.selectedStatus,
         sortBy: state.selectedSortBy,
+        genres: state.selectedGenres,
       );
       state = state.copyWith(
         isLoading: false,
@@ -202,6 +219,7 @@ class SearchNotifier extends StateNotifier<SearchState> {
         year: state.selectedYear,
         status: state.selectedStatus,
         sortBy: state.selectedSortBy,
+        genres: state.selectedGenres,
       );
       state = state.copyWith(
         isLoadMore: false,
@@ -264,12 +282,28 @@ class SearchNotifier extends StateNotifier<SearchState> {
     }
   }
 
+  void toggleGenre(String genreId) {
+    final genres = List<String>.from(state.selectedGenres);
+    if (genres.contains(genreId)) {
+      genres.remove(genreId);
+    } else {
+      genres.add(genreId);
+    }
+    state = state.copyWith(selectedGenres: genres, targetFilteredCount: 20);
+    if (state.isMangaDex) {
+      search(state.query, saveToHistory: false);
+    } else {
+      _checkAndLoadMore();
+    }
+  }
+
   void resetFilters() {
     state = state.copyWith(
       selectedCountry: 'all',
       selectedStatus: 'all',
       selectedYear: 'all',
       selectedSortBy: 'latestUploadedChapter',
+      selectedGenres: const [],
       targetFilteredCount: 20,
     );
     if (state.isMangaDex) {

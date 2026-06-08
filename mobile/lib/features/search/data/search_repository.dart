@@ -36,6 +36,7 @@ class SearchRepository {
     String? year,
     String? status,
     String? sortBy,
+    List<String>? genres,
   }) async {
     if (_source == ServerSource.mangadex) {
       try {
@@ -63,6 +64,11 @@ class SearchRepository {
           if (status == 'ongoing' || status == 'completed' || status == 'hiatus' || status == 'cancelled') {
             queryParams['status[]'] = [status];
           }
+        }
+
+        // Apply Genres Filter (includedTags)
+        if (genres != null && genres.isNotEmpty) {
+          queryParams['includedTags[]'] = genres;
         }
 
         // Apply Sort Order (if not null)

@@ -16,7 +16,14 @@ class UpdateService {
     debugPrint('UpdateService: Starting update check against: $_repoUrl');
     try {
       final dio = Dio();
-      final response = await dio.get(_repoUrl);
+      final response = await dio.get(
+        _repoUrl,
+        options: Options(
+          headers: {
+            'User-Agent': 'RockyDexMobile',
+          },
+        ),
+      );
       
       if (response.statusCode != 200) {
         debugPrint('UpdateService: Failed to get latest release. HTTP Status: ${response.statusCode}');
