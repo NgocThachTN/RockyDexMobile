@@ -182,37 +182,40 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 32),
 
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: Theme.of(context).dividerColor.withOpacity(0.5),
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            decoration: InputDecoration(
+              labelText: 'Email của bạn',
+              labelStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 14),
+              floatingLabelStyle: const TextStyle(color: AppColors.primaryBlue, fontSize: 14, fontWeight: FontWeight.bold),
+              prefixIcon: Icon(Icons.email_outlined, color: isDark ? Colors.white54 : Colors.black45, size: 20),
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.0),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
+              ),
+              errorBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.error, width: 1.0),
+              ),
+              focusedErrorBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.error, width: 1.5),
               ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email của bạn',
-                  prefixIcon: Icon(Icons.email_outlined),
-                  border: UnderlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Vui lòng nhập email';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Email không hợp lệ';
-                  }
-                  return null;
-                },
-              ),
-            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập email';
+              }
+              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                return 'Email không hợp lệ';
+              }
+              return null;
+            },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
           ElevatedButton(
             onPressed: _isSendingCode ? null : _sendResetCode,
@@ -286,79 +289,108 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
           ],
           const SizedBox(height: 24),
 
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(
-                color: Theme.of(context).dividerColor.withOpacity(0.5),
+          TextFormField(
+            controller: _codeController,
+            keyboardType: TextInputType.number,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            decoration: InputDecoration(
+              labelText: 'Mã PIN 6 chữ số',
+              labelStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 14),
+              floatingLabelStyle: const TextStyle(color: AppColors.primaryBlue, fontSize: 14, fontWeight: FontWeight.bold),
+              prefixIcon: Icon(Icons.pin_outlined, color: isDark ? Colors.white54 : Colors.black45, size: 20),
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.0),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
+              ),
+              errorBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.error, width: 1.0),
+              ),
+              focusedErrorBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.error, width: 1.5),
               ),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                children: [
-                  TextFormField(
-                    controller: _codeController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'Mã PIN 6 chữ số',
-                      prefixIcon: Icon(Icons.password_outlined),
-                      border: UnderlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập mã PIN';
-                      }
-                      if (value.length != 6) {
-                        return 'Mã PIN phải có 6 chữ số';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Mật khẩu mới',
-                      prefixIcon: Icon(Icons.lock_outline),
-                      border: UnderlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập mật khẩu mới';
-                      }
-                      if (value.length < 6) {
-                        return 'Mật khẩu phải từ 6 ký tự';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Xác nhận mật khẩu mới',
-                      prefixIcon: Icon(Icons.lock_clock_outlined),
-                      border: UnderlineInputBorder(),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng xác nhận mật khẩu mới';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'Mật khẩu xác nhận không khớp';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
-              ),
-            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập mã PIN';
+              }
+              if (value.length != 6) {
+                return 'Mã PIN phải có 6 chữ số';
+              }
+              return null;
+            },
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          TextFormField(
+            controller: _passwordController,
+            obscureText: true,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            decoration: InputDecoration(
+              labelText: 'Mật khẩu mới',
+              labelStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 14),
+              floatingLabelStyle: const TextStyle(color: AppColors.primaryBlue, fontSize: 14, fontWeight: FontWeight.bold),
+              prefixIcon: Icon(Icons.lock_outlined, color: isDark ? Colors.white54 : Colors.black45, size: 20),
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.0),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
+              ),
+              errorBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.error, width: 1.0),
+              ),
+              focusedErrorBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.error, width: 1.5),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng nhập mật khẩu mới';
+              }
+              if (value.length < 6) {
+                return 'Mật khẩu phải từ 6 ký tự';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 20),
+          TextFormField(
+            controller: _confirmPasswordController,
+            obscureText: true,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            decoration: InputDecoration(
+              labelText: 'Xác nhận mật khẩu mới',
+              labelStyle: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 14),
+              floatingLabelStyle: const TextStyle(color: AppColors.primaryBlue, fontSize: 14, fontWeight: FontWeight.bold),
+              prefixIcon: Icon(Icons.lock_clock_outlined, color: isDark ? Colors.white54 : Colors.black45, size: 20),
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.black12, width: 1.0),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.primaryBlue, width: 1.5),
+              ),
+              errorBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.error, width: 1.0),
+              ),
+              focusedErrorBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.error, width: 1.5),
+              ),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Vui lòng xác nhận mật khẩu mới';
+              }
+              if (value != _passwordController.text) {
+                return 'Mật khẩu xác nhận không khớp';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 32),
 
           ElevatedButton(
             onPressed: _isResettingPassword ? null : _resetPassword,

@@ -110,6 +110,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ],
           bottom: TabBar(
             dividerColor: Colors.transparent,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             tabs: [
               const Tab(text: 'Cập nhật'),
               const Tab(text: 'Truyện mới'),

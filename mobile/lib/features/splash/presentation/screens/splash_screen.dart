@@ -224,7 +224,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                 child: FadeTransition(
                   opacity: _subtitleOpacity,
                   child: Text(
-                    'v1.1.3',
+                    'v1.1.4',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark
