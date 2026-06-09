@@ -7,11 +7,11 @@ import (
 
 type Favorite struct {
 	ID         uint      `json:"id" gorm:"primaryKey"`
-	UserID     string    `json:"user_id" gorm:"type:uuid;index;not null"`
-	ComicSlug  string    `json:"comic_slug" gorm:"not null"`
+	UserID     string    `json:"user_id" gorm:"type:uuid;index;index:idx_favorites_user_comic,priority:1;index:idx_favorites_user_created,priority:1;not null"`
+	ComicSlug  string    `json:"comic_slug" gorm:"not null;index:idx_favorites_user_comic,priority:2"`
 	ComicName  string    `json:"comic_name" gorm:"not null"`
 	ComicThumb string    `json:"comic_thumb"`
-	CreatedAt  time.Time `json:"created_at"`
+	CreatedAt  time.Time `json:"created_at" gorm:"index:idx_favorites_user_created,priority:2"`
 }
 
 // UnmarshalJSON customizes unmarshaling to accept both local DB keys (slug, name, thumb_url)

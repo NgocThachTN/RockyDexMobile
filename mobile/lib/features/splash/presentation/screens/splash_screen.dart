@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/constants/colors.dart';
+import 'package:mobile/core/services/app_version_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -18,10 +19,12 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<Offset> _titleSlide;
   late Animation<double> _titleOpacity;
   late Animation<double> _subtitleOpacity;
+  late final Future<String> _versionLabelFuture;
 
   @override
   void initState() {
     super.initState();
+    _versionLabelFuture = AppVersionService.displayVersionLabel();
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
@@ -211,19 +214,26 @@ class _SplashScreenState extends State<SplashScreen>
                 child: Center(
                   child: FadeTransition(
                     opacity: _subtitleOpacity,
-                    child: Text(
-                      'v1.2.6',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark
-                            ? AppColors.textDarkSecondary.withValues(
-                                alpha: 0.45,
-                              )
-                            : AppColors.textLightSecondary.withValues(
-                                alpha: 0.45,
-                              ),
-                        letterSpacing: 0,
-                      ),
+                    child: FutureBuilder<String>(
+                      future: _versionLabelFuture,
+                      initialData: AppVersionService.fallbackVersionLabel,
+                      builder: (context, snapshot) {
+                        return Text(
+                          snapshot.data ??
+                              AppVersionService.fallbackVersionLabel,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? AppColors.textDarkSecondary.withValues(
+                                    alpha: 0.45,
+                                  )
+                                : AppColors.textLightSecondary.withValues(
+                                    alpha: 0.45,
+                                  ),
+                            letterSpacing: 0,
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),

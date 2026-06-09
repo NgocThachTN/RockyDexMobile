@@ -34,6 +34,15 @@ func (s *LibraryService) CheckFavorite(userID string, comicSlug string) (bool, e
 // History
 func (s *LibraryService) SaveHistory(userID string, hist domain.History) error {
 	hist.UserID = userID
+	if hist.ProgressPercent < 0 {
+		hist.ProgressPercent = 0
+	}
+	if hist.ProgressPercent > 100 {
+		hist.ProgressPercent = 100
+	}
+	if hist.PageNumber < 1 {
+		hist.PageNumber = 1
+	}
 	return s.histRepo.Save(&hist)
 }
 

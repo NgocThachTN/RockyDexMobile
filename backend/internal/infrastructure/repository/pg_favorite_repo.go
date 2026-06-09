@@ -34,7 +34,10 @@ func (r *PgFavoriteRepository) Remove(userID string, comicSlug string) error {
 
 func (r *PgFavoriteRepository) GetList(userID string) ([]domain.Favorite, error) {
 	var favorites []domain.Favorite
-	err := r.db.Find(&favorites, "user_id = ?", userID).Order("created_at desc").Error
+	err := r.db.
+		Where("user_id = ?", userID).
+		Order("created_at desc").
+		Find(&favorites).Error
 	return favorites, err
 }
 

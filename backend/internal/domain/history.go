@@ -7,15 +7,15 @@ import (
 
 type History struct {
 	ID              uint      `json:"id" gorm:"primaryKey"`
-	UserID          string    `json:"user_id" gorm:"type:uuid;index;not null"`
-	ComicSlug       string    `json:"comic_slug" gorm:"not null"`
+	UserID          string    `json:"user_id" gorm:"type:uuid;index;index:idx_histories_user_comic,priority:1;index:idx_histories_user_last_read,priority:1;not null"`
+	ComicSlug       string    `json:"comic_slug" gorm:"not null;index:idx_histories_user_comic,priority:2"`
 	ComicName       string    `json:"comic_name" gorm:"not null"`
 	ComicThumb      string    `json:"comic_thumb"`
 	ChapterSlug     string    `json:"chapter_slug" gorm:"not null"`
 	ChapterName     string    `json:"chapter_name" gorm:"not null"`
 	ProgressPercent int       `json:"progress_percent" gorm:"default:0"` // 0 to 100
 	PageNumber      int       `json:"page_number" gorm:"default:1"`      // 1-based index of the page
-	LastReadAt      time.Time `json:"last_read_at"`
+	LastReadAt      time.Time `json:"last_read_at" gorm:"index:idx_histories_user_last_read,priority:2"`
 }
 
 // UnmarshalJSON customizes unmarshaling to accept both local DB keys (slug, name, thumb_url)

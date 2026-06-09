@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
 import '../../../auth/presentation/auth_notifier.dart';
+import '../../../../core/services/app_version_service.dart';
 import '../../../../core/services/update_service.dart';
 import '../../../library/data/library_repository.dart';
 
@@ -454,13 +455,19 @@ class ProfileScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            'Phiên bản: 1.2.6',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+          FutureBuilder<String>(
+            future: AppVersionService.displayVersionLabel(),
+            initialData: AppVersionService.fallbackVersionLabel,
+            builder: (context, snapshot) {
+              return Text(
+                'Phiên bản: ${snapshot.data ?? AppVersionService.fallbackVersionLabel}',
+                style: const TextStyle(
+                  color: Colors.grey,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              );
+            },
           ),
           const SizedBox(width: 8),
           GestureDetector(

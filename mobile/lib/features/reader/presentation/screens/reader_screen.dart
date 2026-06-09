@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
@@ -46,6 +47,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   bool _isChangingChapter = false;
   String? _resolvedApiDataUrl;
   bool _initialPageJumped = false;
+  final Set<String> _precacheRequestedUrls = <String>{};
+  Timer? _progressSaveTimer;
+  int? _pendingProgressPercent;
+  int? _pendingPageNumber;
+  int? _lastSavedProgressPercent;
+  int? _lastSavedPageNumber;
 
   @override
   void initState() {
@@ -62,6 +69,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   void dispose() {
     // Exit fullscreen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    _progressSaveTimer?.cancel();
+    _flushReadingProgress();
     _scrollController.dispose();
     _pageController.dispose();
     // Invalidate libraryHistoryProvider so that next time HistoryScreen builds, it has fresh data
@@ -85,30 +94,66 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           });
         }
 
-        // Throttle/Save progress periodically
-        _saveReadingProgress(progress, page);
+        _queueReadingProgress(progress, page);
       }
     }
   }
 
-  Future<void> _precacheAllImages(List<String> urls) async {
+  void _precacheAroundPage(List<String> urls, int pageNumber) {
     if (!mounted) return;
-    // Precache first 3 pages immediately
-    for (int i = 0; i < urls.length && i < 3; i++) {
-      if (!mounted) return;
-      precacheImage(CachedNetworkImageProvider(urls[i]), context);
-    }
-    // Precache the rest sequentially with a 250ms delay to prevent network congestion
-    for (int i = 3; i < urls.length; i++) {
-      if (!mounted) return;
-      await Future.delayed(const Duration(milliseconds: 250));
-      if (!mounted) return;
-      precacheImage(CachedNetworkImageProvider(urls[i]), context);
+    if (urls.isEmpty) return;
+    final currentIndex = (pageNumber - 1).clamp(0, urls.length - 1).toInt();
+    final start = (currentIndex - 1).clamp(0, urls.length - 1).toInt();
+    final end = (currentIndex + 2).clamp(0, urls.length - 1).toInt();
+
+    for (int i = start; i <= end; i++) {
+      final url = urls[i];
+      if (_precacheRequestedUrls.add(url)) {
+        unawaited(precacheImage(CachedNetworkImageProvider(url), context));
+      }
     }
   }
 
+  void _queueReadingProgress(
+    int progressPercent,
+    int pageNumber, {
+    bool immediate = false,
+  }) {
+    _pendingProgressPercent = progressPercent.clamp(0, 100).toInt();
+    _pendingPageNumber = pageNumber.clamp(1, _totalPages).toInt();
+
+    if (immediate) {
+      _flushReadingProgress();
+      return;
+    }
+
+    _progressSaveTimer?.cancel();
+    _progressSaveTimer = Timer(
+      const Duration(milliseconds: 700),
+      _flushReadingProgress,
+    );
+  }
+
+  void _flushReadingProgress() {
+    final progressPercent = _pendingProgressPercent;
+    final pageNumber = _pendingPageNumber;
+    if (progressPercent == null || pageNumber == null) return;
+
+    _progressSaveTimer?.cancel();
+    _pendingProgressPercent = null;
+    _pendingPageNumber = null;
+    if (progressPercent == _lastSavedProgressPercent &&
+        pageNumber == _lastSavedPageNumber) {
+      return;
+    }
+
+    _lastSavedProgressPercent = progressPercent;
+    _lastSavedPageNumber = pageNumber;
+    _saveReadingProgress(progressPercent, pageNumber);
+  }
+
   void _saveReadingProgress(int progressPercent, int pageNumber) {
-    final apiDataUrl = widget.apiDataUrl ?? '';
+    final apiDataUrl = widget.apiDataUrl ?? _resolvedApiDataUrl ?? '';
     final chapterState = ref.read(readerChapterDetailProvider(apiDataUrl));
     final comicDetailState = ref.read(comicDetailProvider(widget.comicSlug));
 
@@ -163,20 +208,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     }
 
     // Save to repositories (local & remote)
-    ref
-        .read(comicRepositoryProvider)
-        .saveHistory(
-          comicSlug: widget.comicSlug,
-          comicName: comicName,
-          comicThumb: comicThumb,
-          chapterSlug: widget.chapterSlug,
-          chapterName: chapterName,
-          progressPercent: progressPercent,
-          pageNumber: pageNumber,
-        );
+    unawaited(
+      ref
+          .read(comicRepositoryProvider)
+          .saveHistory(
+            comicSlug: widget.comicSlug,
+            comicName: comicName,
+            comicThumb: comicThumb,
+            chapterSlug: widget.chapterSlug,
+            chapterName: chapterName,
+            progressPercent: progressPercent,
+            pageNumber: pageNumber,
+          ),
+    );
 
-    // Invalidate libraryHistoryProvider to refresh the history list
-    ref.invalidate(libraryHistoryProvider);
+    // History is invalidated on reader dispose to avoid refreshing providers
+    // during every horizontal page swipe.
   }
 
   void _toggleUI() {
@@ -265,7 +312,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 if (!_imagesPrecached) {
                   _imagesPrecached = true;
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    _precacheAllImages(imageUrls);
+                    _precacheAroundPage(imageUrls, _currentPage);
                   });
                 }
 
@@ -343,17 +390,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             ),
           ),
 
-          // 1.5. Transparent Tap Areas for Horizontal Navigation
-          if (settings.layout == 'horizontal' && chapterAsync.hasValue)
-            ..._buildHorizontalTapOverlay(
-              context: context,
-              hasNext: hasNext,
-              hasPrev: hasPrev,
-              chaptersList: chaptersList,
-              currentIdx: currentIdx,
-              comicDetail: comicDetail,
-            ),
-
           // 2. Brightness Overlay
           IgnorePointer(
             child: Container(
@@ -370,70 +406,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         ],
       ),
     );
-  }
-
-  List<Widget> _buildHorizontalTapOverlay({
-    required BuildContext context,
-    required bool hasNext,
-    required bool hasPrev,
-    required List<ChapterModel> chaptersList,
-    required int currentIdx,
-    required ComicDetailInfoModel? comicDetail,
-  }) {
-    final width = MediaQuery.of(context).size.width;
-    return [
-      // Left tap area (25%)
-      Positioned(
-        left: 0,
-        top: 0,
-        bottom: 0,
-        width: width * 0.25,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () {
-            if (_currentPage > 1) {
-              _pageController.previousPage(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            } else if (hasPrev && comicDetail != null) {
-              _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
-            }
-          },
-        ),
-      ),
-      // Right tap area (25%)
-      Positioned(
-        right: 0,
-        top: 0,
-        bottom: 0,
-        width: width * 0.25,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: () {
-            if (_currentPage < _totalPages) {
-              _pageController.nextPage(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
-            } else if (hasNext && comicDetail != null) {
-              _goToNextChapter(chaptersList, currentIdx, comicDetail);
-            }
-          },
-        ),
-      ),
-      // Center tap area (50%)
-      Positioned(
-        left: width * 0.25,
-        right: width * 0.25,
-        top: 0,
-        bottom: 0,
-        child: GestureDetector(
-          behavior: HitTestBehavior.translucent,
-          onTap: _toggleUI,
-        ),
-      ),
-    ];
   }
 
   Widget _buildVerticalScroll({
@@ -498,93 +470,166 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       );
     }
 
-    return PhotoViewGallery.builder(
-      scrollPhysics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
-      pageController: _pageController,
-      builder: (BuildContext context, int index) {
-        if (index == 0) {
-          return PhotoViewGalleryPageOptions.customChild(
-            child: _buildChapterTurnPage(
-              context: context,
-              message: hasPrev ? 'Đang mở chương trước...' : 'Đây là trang đầu',
+    return NotificationListener<ScrollNotification>(
+      onNotification: (notification) {
+        if (notification is ScrollStartNotification &&
+            notification.dragDetails != null &&
+            _showUI) {
+          setState(() {
+            _showUI = false;
+          });
+        }
+        return false;
+      },
+      child: PhotoViewGallery.builder(
+        scrollPhysics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
+        pageController: _pageController,
+        wantKeepAlive: true,
+        gaplessPlayback: true,
+        allowImplicitScrolling: true,
+        backgroundDecoration: const BoxDecoration(color: Colors.black),
+        builder: (BuildContext context, int index) {
+          if (index == 0) {
+            return PhotoViewGalleryPageOptions.customChild(
+              child: _buildChapterTurnPage(
+                context: context,
+                message: hasPrev
+                    ? 'Đang mở chương trước...'
+                    : 'Đây là trang đầu',
+              ),
+              initialScale: PhotoViewComputedScale.contained,
+              minScale: PhotoViewComputedScale.contained,
+              onTapUp: (_, __, ___) => _toggleUI(),
+            );
+          }
+
+          if (index == urls.length + 1) {
+            return PhotoViewGalleryPageOptions.customChild(
+              child: hasNext
+                  ? _buildChapterTurnPage(
+                      context: context,
+                      message: 'Đang mở chương sau...',
+                    )
+                  : _buildEndOfChapterPage(
+                      context: context,
+                      hasNext: hasNext,
+                      chaptersList: chaptersList,
+                      currentIdx: currentIdx,
+                      comicDetail: comicDetail,
+                      isHorizontal: true,
+                    ),
+              initialScale: PhotoViewComputedScale.contained,
+              minScale: PhotoViewComputedScale.contained,
+              onTapUp: (_, __, ___) => _toggleUI(),
+            );
+          }
+
+          final imageIndex = index - 1;
+          return PhotoViewGalleryPageOptions(
+            imageProvider: CachedNetworkImageProvider(urls[imageIndex]),
+            initialScale: PhotoViewComputedScale.contained,
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 2.5,
+            filterQuality: FilterQuality.low,
+            gestureDetectorBehavior: HitTestBehavior.opaque,
+            onTapUp: (_, details, ___) => _handleHorizontalPageTap(
+              details,
+              hasNext: hasNext,
+              hasPrev: hasPrev,
+              chaptersList: chaptersList,
+              currentIdx: currentIdx,
+              comicDetail: comicDetail,
             ),
-            initialScale: PhotoViewComputedScale.contained,
-            minScale: PhotoViewComputedScale.contained,
           );
-        }
-
-        if (index == urls.length + 1) {
-          return PhotoViewGalleryPageOptions.customChild(
-            child: hasNext
-                ? _buildChapterTurnPage(
-                    context: context,
-                    message: 'Đang mở chương sau...',
-                  )
-                : _buildEndOfChapterPage(
-                    context: context,
-                    hasNext: hasNext,
-                    chaptersList: chaptersList,
-                    currentIdx: currentIdx,
-                    comicDetail: comicDetail,
-                    isHorizontal: true,
-                  ),
-            initialScale: PhotoViewComputedScale.contained,
-            minScale: PhotoViewComputedScale.contained,
-          );
-        }
-
-        final imageIndex = index - 1;
-        return PhotoViewGalleryPageOptions(
-          imageProvider: CachedNetworkImageProvider(urls[imageIndex]),
-          initialScale: PhotoViewComputedScale.contained,
-          minScale: PhotoViewComputedScale.contained,
-          maxScale: PhotoViewComputedScale.covered * 2.5,
-        );
-      },
-      itemCount: urls.length + 2,
-      loadingBuilder: (context, event) => const Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: AppColors.primaryBlue,
+        },
+        itemCount: urls.length + 2,
+        loadingBuilder: (context, event) => const Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primaryBlue,
+          ),
         ),
-      ),
-      onPageChanged: (index) {
-        if (index == 0) {
-          if (hasPrev && comicDetail != null) {
-            _saveReadingProgress(0, 1);
-            _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
-          } else {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (_pageController.hasClients) {
-                _pageController.jumpToPage(1);
-              }
-            });
+        onPageChanged: (index) {
+          if (index == 0) {
+            if (hasPrev && comicDetail != null) {
+              _queueReadingProgress(0, 1, immediate: true);
+              _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
+            } else {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_pageController.hasClients) {
+                  _pageController.jumpToPage(1);
+                }
+              });
+            }
+            return;
           }
-          return;
-        }
 
-        if (index == urls.length + 1) {
-          _saveReadingProgress(100, urls.length);
-          if (hasNext && comicDetail != null) {
-            _goToNextChapter(chaptersList, currentIdx, comicDetail);
-          } else {
+          if (index == urls.length + 1) {
+            _queueReadingProgress(100, urls.length, immediate: true);
+            if (hasNext && comicDetail != null) {
+              _goToNextChapter(chaptersList, currentIdx, comicDetail);
+            } else {
+              setState(() {
+                _currentPage = urls.length;
+              });
+            }
+            return;
+          }
+
+          final actualPage = index.clamp(1, urls.length).toInt();
+          if (_currentPage != actualPage) {
             setState(() {
-              _currentPage = urls.length;
+              _currentPage = actualPage;
             });
           }
-          return;
-        }
-
-        final actualPage = index.clamp(1, urls.length).toInt();
-        setState(() {
-          _currentPage = actualPage;
-        });
-        _saveReadingProgress(
-          (actualPage / urls.length * 100).toInt(),
-          actualPage,
-        );
-      },
+          _precacheAroundPage(urls, actualPage);
+          _queueReadingProgress(
+            (actualPage / urls.length * 100).toInt(),
+            actualPage,
+          );
+        },
+      ),
     );
+  }
+
+  void _handleHorizontalPageTap(
+    TapUpDetails details, {
+    required bool hasNext,
+    required bool hasPrev,
+    required List<ChapterModel> chaptersList,
+    required int currentIdx,
+    required ComicDetailInfoModel? comicDetail,
+  }) {
+    final width = MediaQuery.of(context).size.width;
+    final dx = details.localPosition.dx;
+
+    if (dx < width * 0.25) {
+      if (_currentPage > 1) {
+        _pageController.previousPage(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        );
+      } else if (hasPrev && comicDetail != null) {
+        _queueReadingProgress(0, 1, immediate: true);
+        _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
+      }
+      return;
+    }
+
+    if (dx > width * 0.75) {
+      if (_currentPage < _totalPages) {
+        _pageController.nextPage(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        );
+      } else if (hasNext && comicDetail != null) {
+        _queueReadingProgress(100, _totalPages, immediate: true);
+        _goToNextChapter(chaptersList, currentIdx, comicDetail);
+      }
+      return;
+    }
+
+    _toggleUI();
   }
 
   Widget _buildChapterTurnPage({

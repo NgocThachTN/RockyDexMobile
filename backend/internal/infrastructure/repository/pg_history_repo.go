@@ -18,28 +18,35 @@ func NewPgHistoryRepository(db *gorm.DB) domain.HistoryRepository {
 }
 
 func (r *PgHistoryRepository) Save(hist *domain.History) error {
-	var existing domain.History
-	err := r.db.First(&existing, "user_id = ? AND comic_slug = ?", hist.UserID, hist.ComicSlug).Error
-	if err == nil {
-		// Update existing history entry
-		existing.ChapterSlug = hist.ChapterSlug
-		existing.ChapterName = hist.ChapterName
-		existing.ProgressPercent = hist.ProgressPercent
-		existing.PageNumber = hist.PageNumber
-		existing.LastReadAt = time.Now()
-		return r.db.Save(&existing).Error
+	now := time.Now()
+	result := r.db.Model(&domain.History{}).
+		Where("user_id = ? AND comic_slug = ?", hist.UserID, hist.ComicSlug).
+		Updates(map[string]interface{}{
+			"comic_name":       hist.ComicName,
+			"comic_thumb":      hist.ComicThumb,
+			"chapter_slug":     hist.ChapterSlug,
+			"chapter_name":     hist.ChapterName,
+			"progress_percent": hist.ProgressPercent,
+			"page_number":      hist.PageNumber,
+			"last_read_at":     now,
+		})
+	if result.Error != nil {
+		return result.Error
 	}
-	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return err
+	if result.RowsAffected > 0 {
+		return nil
 	}
-	// Create new history entry
-	hist.LastReadAt = time.Now()
+
+	hist.LastReadAt = now
 	return r.db.Create(hist).Error
 }
 
 func (r *PgHistoryRepository) GetList(userID string) ([]domain.History, error) {
 	var histories []domain.History
-	err := r.db.Find(&histories, "user_id = ?", userID).Order("last_read_at desc").Error
+	err := r.db.
+		Where("user_id = ?", userID).
+		Order("last_read_at desc").
+		Find(&histories).Error
 	return histories, err
 }
 
