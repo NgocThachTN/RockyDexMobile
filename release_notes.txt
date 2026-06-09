@@ -1,3 +1,8 @@
+Cập nhật v1.2.1:
+- Nâng cấp phiên bản lên v1.2.1+24 để phát hành OTA qua GitHub Releases.
+- Tối ưu trình đọc truyện: hỗ trợ overscroll để chuyển về chương trước/chương sau mượt hơn.
+- Tinh chỉnh header và bottom controls trong trình đọc: bố cục gọn hơn, nút tròn tách riêng và panel điều khiển chiếm ít diện tích hơn.
+
 Cập nhật v1.2.0:
 - Nâng cấp phiên bản lên v1.2.0+23 để hỗ trợ OTA qua GitHub Releases.
 - Thiết kế lại Splash Screen: logo và chữ được tách khoảng cách hợp lý hơn, subtitle rõ ràng và cân đối hơn.
