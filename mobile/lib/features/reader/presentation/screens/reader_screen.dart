@@ -1368,10 +1368,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 onPressed: () =>
                     _goToPreviousChapter(chaptersList, currentIdx, comic),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(20),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: InkWell(
@@ -1383,13 +1383,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               currentIdx,
                               comic,
                             ),
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(20),
                       child: Container(
-                        height: 52,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        height: 40,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.58),
-                          borderRadius: BorderRadius.circular(24),
+                          borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: Colors.white.withValues(alpha: 0.14),
                             width: 0.8,
@@ -1408,15 +1408,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               '$currentReadablePage/$totalReadablePages',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
                             Container(
                               width: 1,
-                              height: 20,
+                              height: 16,
                               margin: const EdgeInsets.symmetric(
-                                horizontal: 12,
+                                horizontal: 10,
                               ),
                               color: Colors.white.withValues(alpha: 0.18),
                             ),
@@ -1427,16 +1427,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 6),
+                            const SizedBox(width: 4),
                             const Icon(
                               Icons.keyboard_arrow_up,
                               color: Colors.white70,
-                              size: 16,
+                              size: 14,
                             ),
                           ],
                         ),
@@ -1445,7 +1445,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               _buildReaderGlassCircleButton(
                 icon: Icons.keyboard_arrow_right_rounded,
                 tooltip: 'Chương sau',
@@ -1472,8 +1472,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
-          width: 52,
-          height: 52,
+          width: 40,
+          height: 40,
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: enabled ? 0.58 : 0.34),
             shape: BoxShape.circle,
@@ -1496,7 +1496,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             icon: Icon(
               icon,
               color: enabled ? Colors.white : Colors.white30,
-              size: 28,
+              size: 22,
             ),
           ),
         ),

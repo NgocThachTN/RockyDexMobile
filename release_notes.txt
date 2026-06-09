@@ -1,3 +1,8 @@
+Cập nhật v1.2.4:
+- Nâng cấp phiên bản lên v1.2.4+26.
+- Thu gọn bottom bar trong trình đọc truyện để cân xứng với header bar.
+- Giảm kích thước nút chuyển chương trước/sau dạng liquid glass từ 52px xuống 40px, icon nhỏ hơn và pill giữa thấp gọn hơn.
+
 Cập nhật v1.2.2:
 - Nâng cấp phiên bản lên v1.2.2+25.
 - Thêm thông báo cập nhật tự động: app tự kiểm tra GitHub Releases khi mở/resume và định kỳ khi đang chạy.
