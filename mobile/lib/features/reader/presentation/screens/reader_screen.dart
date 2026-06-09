@@ -76,7 +76,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       final currentScroll = _scrollController.position.pixels;
       if (maxScroll > 0) {
         final progress = (currentScroll / maxScroll * 100).toInt();
-        final page = ((currentScroll / maxScroll) * _totalPages).clamp(1, _totalPages).toInt();
+        final page = ((currentScroll / maxScroll) * _totalPages)
+            .clamp(1, _totalPages)
+            .toInt();
 
         if (page != _currentPage) {
           setState(() {
@@ -111,8 +113,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final chapterState = ref.read(readerChapterDetailProvider(apiDataUrl));
     final comicDetailState = ref.read(comicDetailProvider(widget.comicSlug));
 
-    String comicName = widget.comicName ?? widget.comicSlug.replaceAll('-', ' ');
-    String chapterName = widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
+    String comicName =
+        widget.comicName ?? widget.comicSlug.replaceAll('-', ' ');
+    String chapterName =
+        widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
     String comicThumb = widget.comicThumb ?? '';
 
     if (comicDetailState.hasValue) {
@@ -128,11 +132,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           break;
         }
       }
-      final server = matchedServer ?? (comic.chapters.isNotEmpty ? comic.chapters.first : null);
+      final server =
+          matchedServer ??
+          (comic.chapters.isNotEmpty ? comic.chapters.first : null);
       if (server != null) {
         final matchedChapter = server.serverData.firstWhere(
           (c) => c.chapterSlug == widget.chapterSlug,
-          orElse: () => ChapterModel(filename: '', chapterName: chapterName, chapterTitle: '', chapterApiData: ''),
+          orElse: () => ChapterModel(
+            filename: '',
+            chapterName: chapterName,
+            chapterTitle: '',
+            chapterApiData: '',
+          ),
         );
         if (matchedChapter.chapterName.isNotEmpty) {
           chapterName = matchedChapter.chapterName;
@@ -153,7 +164,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     }
 
     // Save to repositories (local & remote)
-    ref.read(comicRepositoryProvider).saveHistory(
+    ref
+        .read(comicRepositoryProvider)
+        .saveHistory(
           comicSlug: widget.comicSlug,
           comicName: comicName,
           comicThumb: comicThumb,
@@ -162,7 +175,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           progressPercent: progressPercent,
           pageNumber: pageNumber,
         );
-    
+
     // Invalidate libraryHistoryProvider to refresh the history list
     ref.invalidate(libraryHistoryProvider);
   }
@@ -187,7 +200,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     List<ChapterModel> chaptersList = [];
     int currentIdx = -1;
     bool hasNext = false;
-    bool hasPrev = false;
     ComicDetailInfoModel? comicDetail;
 
     if (comicDetailAsync.hasValue) {
@@ -199,11 +211,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           break;
         }
       }
-      final server = matchedServer ?? (comicDetail.chapters.isNotEmpty ? comicDetail.chapters.first : null);
+      final server =
+          matchedServer ??
+          (comicDetail.chapters.isNotEmpty ? comicDetail.chapters.first : null);
       if (server != null) {
         chaptersList = server.serverData;
-        currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
-        hasPrev = currentIdx != -1 && currentIdx < chaptersList.length - 1;
+        currentIdx = chaptersList.indexWhere(
+          (c) => c.chapterSlug == widget.chapterSlug,
+        );
         hasNext = currentIdx > 0;
 
         // Resolve apiDataUrl if it was empty and chapter was found in chapters list
@@ -229,17 +244,23 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         children: [
           // 1. Pages Viewer
           GestureDetector(
-            onTap: settings.layout == 'horizontal' ? null : _toggleUI, // Taps are handled by overlay in horizontal layout
+            onTap: settings.layout == 'horizontal'
+                ? null
+                : _toggleUI, // Taps are handled by overlay in horizontal layout
             child: chapterAsync.when(
               data: (chapter) {
                 final pages = chapter.item.chapterImage;
-                _totalPages = settings.layout == 'horizontal' ? pages.length + 1 : pages.length;
+                _totalPages = settings.layout == 'horizontal'
+                    ? pages.length + 1
+                    : pages.length;
 
                 final cdn = chapter.domainCdn;
                 final path = chapter.item.chapterPath;
 
                 // Build absolute image URLs
-                final imageUrls = pages.map((page) => '$cdn/$path/${page.imageFile}').toList();
+                final imageUrls = pages
+                    .map((page) => '$cdn/$path/${page.imageFile}')
+                    .toList();
 
                 // Precache images if not done yet
                 if (!_imagesPrecached) {
@@ -253,8 +274,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 if (!_initialPageJumped) {
                   _initialPageJumped = true;
                   WidgetsBinding.instance.addPostFrameCallback((_) async {
-                    final hist = await ref.read(comicRepositoryProvider).getReadingHistory(widget.comicSlug);
-                    if (hist != null && hist['chapter_slug'] == widget.chapterSlug) {
+                    final hist = await ref
+                        .read(comicRepositoryProvider)
+                        .getReadingHistory(widget.comicSlug);
+                    if (hist != null &&
+                        hist['chapter_slug'] == widget.chapterSlug) {
                       final savedPage = hist['page_number'] as int? ?? 1;
                       if (savedPage > 1 && savedPage <= _totalPages) {
                         setState(() {
@@ -264,8 +288,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           _pageController.jumpToPage(savedPage - 1);
                         } else {
                           if (_scrollController.hasClients) {
-                            final maxScroll = _scrollController.position.maxScrollExtent;
-                            final targetOffset = (savedPage - 1) / (_totalPages - 1) * maxScroll;
+                            final maxScroll =
+                                _scrollController.position.maxScrollExtent;
+                            final targetOffset =
+                                (savedPage - 1) / (_totalPages - 1) * maxScroll;
                             _scrollController.jumpTo(targetOffset);
                           }
                         }
@@ -299,12 +325,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Lỗi tải chương: $err', style: const TextStyle(color: Colors.white)),
+                    Text(
+                      'Lỗi tải chương: $err',
+                      style: const TextStyle(color: Colors.white),
+                    ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => ref.invalidate(readerChapterDetailProvider(initialApiDataUrl)),
+                      onPressed: () => ref.invalidate(
+                        readerChapterDetailProvider(initialApiDataUrl),
+                      ),
                       child: const Text('Thử lại'),
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -324,7 +355,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           // 2. Brightness Overlay
           IgnorePointer(
             child: Container(
-              color: Colors.black.withOpacity(1.0 - settings.brightness),
+              color: Colors.black.withValues(alpha: 1.0 - settings.brightness),
             ),
           ),
 
@@ -332,7 +363,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           if (_showUI) _buildTopBar(context, chapterAsync),
 
           // 4. Bottom Controls Overlay
-          if (_showUI) _buildBottomControls(context, settings, comicDetailAsync),
+          if (_showUI)
+            _buildBottomControls(context, settings, comicDetailAsync),
         ],
       ),
     );
@@ -379,7 +411,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
               );
-            } else if (_currentPage == _totalPages && hasNext && !_isChangingChapter && comicDetail != null) {
+            } else if (_currentPage == _totalPages &&
+                hasNext &&
+                !_isChangingChapter &&
+                comicDetail != null) {
               setState(() {
                 _isChangingChapter = true;
               });
@@ -430,8 +465,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         controller: _scrollController,
         padding: EdgeInsets.zero,
         itemCount: urls.length + 1,
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        cacheExtent: 3000, // Preload images 3000px ahead/behind to prevent loading blank screens
+        physics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
+        cacheExtent:
+            3000, // Preload images 3000px ahead/behind to prevent loading blank screens
         itemBuilder: (context, index) {
           if (index == urls.length) {
             return _buildEndOfChapterPage(
@@ -448,7 +486,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       ),
     );
   }
-
 
   Widget _buildHorizontalGallery({
     required List<String> urls,
@@ -476,7 +513,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         return false;
       },
       child: PhotoViewGallery.builder(
-        scrollPhysics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        scrollPhysics: const BouncingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
+        ),
         pageController: _pageController,
         builder: (BuildContext context, int index) {
           if (index == urls.length) {
@@ -502,14 +541,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         },
         itemCount: urls.length + 1,
         loadingBuilder: (context, event) => const Center(
-          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primaryBlue,
+          ),
         ),
         onPageChanged: (index) {
           setState(() {
             _currentPage = index + 1;
           });
           final actualPage = (index + 1).clamp(1, urls.length);
-          _saveReadingProgress((actualPage / urls.length * 100).toInt(), actualPage);
+          _saveReadingProgress(
+            (actualPage / urls.length * 100).toInt(),
+            actualPage,
+          );
         },
       ),
     );
@@ -523,7 +568,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     required ComicDetailInfoModel? comicDetail,
     required bool isHorizontal,
   }) {
-    final currentChapterName = currentIdx != -1 && currentIdx < chaptersList.length
+    final currentChapterName =
+        currentIdx != -1 && currentIdx < chaptersList.length
         ? chaptersList[currentIdx].chapterName
         : widget.chapterSlug.replaceAll('chap-', '');
 
@@ -534,8 +580,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       height: isHorizontal ? double.infinity : 320,
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.85),
-        borderRadius: isHorizontal ? null : const BorderRadius.vertical(top: Radius.circular(24)),
+        color: Colors.black.withValues(alpha: 0.85),
+        borderRadius: isHorizontal
+            ? null
+            : const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Center(
         child: SingleChildScrollView(
@@ -545,16 +593,26 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             children: [
               // Badge "Đã đọc xong"
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withOpacity(0.15),
+                  color: AppColors.primaryBlue.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3), width: 1),
+                  border: Border.all(
+                    color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.check_circle_outline, color: AppColors.primaryBlue, size: 16),
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: AppColors.primaryBlue,
+                      size: 16,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       'ĐÃ ĐỌC XONG',
@@ -569,17 +627,14 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Tên chương hiện tại
               Text(
                 'Chương $currentChapterName',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
               ),
               const SizedBox(height: 12),
-              
+
               // Dấu phân cách nhỏ
               Container(
                 width: 40,
@@ -615,7 +670,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Nút CTA đọc tiếp chương sau
                 ElevatedButton(
                   onPressed: () {
@@ -629,7 +684,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryBlue,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 36,
+                      vertical: 14,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -640,7 +698,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     children: [
                       Text(
                         'Đọc Chương Tiếp Theo',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       SizedBox(width: 8),
                       Icon(Icons.arrow_forward_rounded, size: 16),
@@ -648,14 +709,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Hướng dẫn vuốt/cuộn
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      isHorizontal ? Icons.swap_horiz_rounded : Icons.swap_vert_rounded,
+                      isHorizontal
+                          ? Icons.swap_horiz_rounded
+                          : Icons.swap_vert_rounded,
                       color: Colors.white38,
                       size: 14,
                     ),
@@ -684,7 +747,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -697,7 +760,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white70,
                         side: const BorderSide(color: Colors.white30),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -714,7 +780,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white24,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
@@ -730,16 +799,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context, AsyncValue<ChapterDetailInfoModel> chapterAsync) {
+  Widget _buildTopBar(
+    BuildContext context,
+    AsyncValue<ChapterDetailInfoModel> chapterAsync,
+  ) {
     final comicDetailState = ref.watch(comicDetailProvider(widget.comicSlug));
     final settings = ref.watch(readerSettingsProvider);
-    
+    final topInset = MediaQuery.of(context).padding.top;
+
     String title = 'Đang tải...';
     if (comicDetailState.hasValue) {
       final comic = comicDetailState.value!;
       final comicName = comic.name;
       String chapterName = widget.chapterSlug.replaceAll('chap-', '');
-      
+
       // Find matching chapter name
       ServerModel? matchedServer;
       for (final srv in comic.chapters) {
@@ -748,11 +821,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           break;
         }
       }
-      final server = matchedServer ?? (comic.chapters.isNotEmpty ? comic.chapters.first : null);
+      final server =
+          matchedServer ??
+          (comic.chapters.isNotEmpty ? comic.chapters.first : null);
       if (server != null) {
         final matchedChapter = server.serverData.firstWhere(
           (c) => c.chapterSlug == widget.chapterSlug,
-          orElse: () => ChapterModel(filename: '', chapterName: chapterName, chapterTitle: '', chapterApiData: ''),
+          orElse: () => ChapterModel(
+            filename: '',
+            chapterName: chapterName,
+            chapterTitle: '',
+            chapterApiData: '',
+          ),
         );
         if (matchedChapter.chapterName.isNotEmpty) {
           chapterName = matchedChapter.chapterName;
@@ -776,15 +856,30 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     }
 
     return Positioned(
-      top: 0,
-      left: 0,
-      right: 0,
-      child: ClipRect(
+      top: topInset + 10,
+      left: 12,
+      right: 12,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
-            padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 8, bottom: 12),
-            color: Colors.black.withOpacity(0.6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.58),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.14),
+                width: 0.8,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.28),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
             child: Row(
               children: [
                 IconButton(
@@ -796,7 +891,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -804,7 +903,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   tooltip: 'Cài đặt trình đọc',
                   onPressed: () => _showReaderSettingsSheet(context, settings),
                 ),
-                const SizedBox(width: 8),
               ],
             ),
           ),
@@ -816,7 +914,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   void _showReaderSettingsSheet(BuildContext context, ReaderSettings settings) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.black.withOpacity(0.9),
+      backgroundColor: Colors.black.withValues(alpha: 0.9),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
@@ -829,7 +927,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             final currentSettings = ref.watch(readerSettingsProvider);
             return SafeArea(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -846,14 +947,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                          icon: const Icon(
+                            Icons.close,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
                     ),
                     const Divider(color: Colors.white24, height: 1),
                     const SizedBox(height: 16),
-                    
+
                     // Layout Mode
                     const Text(
                       'Chế độ đọc',
@@ -872,18 +977,25 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             label: const Center(
                               child: Text(
                                 'Cuộn dọc',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             selected: currentSettings.layout == 'vertical',
                             selectedColor: AppColors.primaryBlue,
                             backgroundColor: Colors.white12,
                             labelStyle: TextStyle(
-                              color: currentSettings.layout == 'vertical' ? Colors.white : Colors.white60,
+                              color: currentSettings.layout == 'vertical'
+                                  ? Colors.white
+                                  : Colors.white60,
                             ),
                             onSelected: (selected) {
                               if (selected) {
-                                ref.read(readerSettingsProvider.notifier).updateLayout('vertical');
+                                ref
+                                    .read(readerSettingsProvider.notifier)
+                                    .updateLayout('vertical');
                                 setModalState(() {});
                               }
                             },
@@ -896,18 +1008,25 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             label: const Center(
                               child: Text(
                                 'Lướt ngang',
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                             selected: currentSettings.layout == 'horizontal',
                             selectedColor: AppColors.primaryBlue,
                             backgroundColor: Colors.white12,
                             labelStyle: TextStyle(
-                              color: currentSettings.layout == 'horizontal' ? Colors.white : Colors.white60,
+                              color: currentSettings.layout == 'horizontal'
+                                  ? Colors.white
+                                  : Colors.white60,
                             ),
                             onSelected: (selected) {
                               if (selected) {
-                                ref.read(readerSettingsProvider.notifier).updateLayout('horizontal');
+                                ref
+                                    .read(readerSettingsProvider.notifier)
+                                    .updateLayout('horizontal');
                                 setModalState(() {});
                               }
                             },
@@ -916,7 +1035,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Brightness
                     const Text(
                       'Độ sáng màn hình',
@@ -929,7 +1048,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.brightness_low, color: Colors.white54, size: 18),
+                        const Icon(
+                          Icons.brightness_low,
+                          color: Colors.white54,
+                          size: 18,
+                        ),
                         Expanded(
                           child: Slider(
                             value: currentSettings.brightness,
@@ -938,12 +1061,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                             activeColor: AppColors.primaryBlue,
                             inactiveColor: Colors.white24,
                             onChanged: (val) {
-                              ref.read(readerSettingsProvider.notifier).updateBrightness(val);
+                              ref
+                                  .read(readerSettingsProvider.notifier)
+                                  .updateBrightness(val);
                               setModalState(() {});
                             },
                           ),
                         ),
-                        const Icon(Icons.brightness_high, color: Colors.white, size: 18),
+                        const Icon(
+                          Icons.brightness_high,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 12),
@@ -977,7 +1106,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   ) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.black.withOpacity(0.95),
+      backgroundColor: Colors.black.withValues(alpha: 0.95),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(16),
@@ -993,7 +1122,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1006,7 +1138,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white70,
+                        size: 20,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -1023,13 +1159,22 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
                     return ListTile(
                       dense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 2),
-                      tileColor: isCurrent ? AppColors.primaryBlue.withOpacity(0.15) : null,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 2,
+                      ),
+                      tileColor: isCurrent
+                          ? AppColors.primaryBlue.withValues(alpha: 0.15)
+                          : null,
                       title: Text(
                         'Chương ${chap.chapterName}',
                         style: TextStyle(
-                          color: isCurrent ? AppColors.primaryBlue : Colors.white,
-                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                          color: isCurrent
+                              ? AppColors.primaryBlue
+                              : Colors.white,
+                          fontWeight: isCurrent
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                           fontSize: 14,
                         ),
                       ),
@@ -1039,13 +1184,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: isCurrent ? AppColors.primaryBlue.withOpacity(0.7) : Colors.white60,
+                                color: isCurrent
+                                    ? AppColors.primaryBlue.withValues(
+                                        alpha: 0.7,
+                                      )
+                                    : Colors.white60,
                                 fontSize: 11,
                               ),
                             )
                           : null,
                       trailing: isCurrent
-                          ? const Icon(Icons.check, color: AppColors.primaryBlue, size: 18)
+                          ? const Icon(
+                              Icons.check,
+                              color: AppColors.primaryBlue,
+                              size: 18,
+                            )
                           : null,
                       onTap: () {
                         Navigator.pop(context); // Close bottom sheet
@@ -1069,41 +1222,75 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     ReaderSettings settings,
     AsyncValue<ComicDetailInfoModel> comicDetailAsync,
   ) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: ClipRect(
+      bottom: bottomInset + 12,
+      left: 12,
+      right: 12,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
           child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-            color: Colors.black.withOpacity(0.6),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.58),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.14),
+                width: 0.8,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.30),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 1. Page Indicator / Progress Slider
                 if (_totalPages > 1)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8.0,
+                      vertical: 2.0,
+                    ),
                     child: Row(
                       children: [
                         Text(
-                          (settings.layout == 'horizontal' && _currentPage == _totalPages) ? 'Hết' : '$_currentPage',
-                          style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                          (settings.layout == 'horizontal' &&
+                                  _currentPage == _totalPages)
+                              ? 'Hết'
+                              : '$_currentPage',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Expanded(
                           child: SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               trackHeight: 2.0,
-                              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
-                              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12.0),
+                              thumbShape: const RoundSliderThumbShape(
+                                enabledThumbRadius: 6.0,
+                              ),
+                              overlayShape: const RoundSliderOverlayShape(
+                                overlayRadius: 12.0,
+                              ),
                               activeTrackColor: AppColors.primaryBlue,
                               inactiveTrackColor: Colors.white24,
                               thumbColor: AppColors.primaryBlue,
                             ),
                             child: Slider(
-                              value: _currentPage.toDouble().clamp(1.0, _totalPages.toDouble()),
+                              value: _currentPage.toDouble().clamp(
+                                1.0,
+                                _totalPages.toDouble(),
+                              ),
                               min: 1.0,
                               max: _totalPages.toDouble(),
                               onChanged: (value) {
@@ -1115,8 +1302,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                   _pageController.jumpToPage(targetPage - 1);
                                 } else {
                                   if (_scrollController.hasClients) {
-                                    final maxScroll = _scrollController.position.maxScrollExtent;
-                                    final targetOffset = (targetPage - 1) / (_totalPages - 1) * maxScroll;
+                                    final maxScroll = _scrollController
+                                        .position
+                                        .maxScrollExtent;
+                                    final targetOffset =
+                                        (targetPage - 1) /
+                                        (_totalPages - 1) *
+                                        maxScroll;
                                     _scrollController.jumpTo(targetOffset);
                                   }
                                 }
@@ -1125,13 +1317,19 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           ),
                         ),
                         Text(
-                          (settings.layout == 'horizontal') ? '${_totalPages - 1}' : '$_totalPages',
-                          style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                          (settings.layout == 'horizontal')
+                              ? '${_totalPages - 1}'
+                              : '$_totalPages',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                
+
                 const SizedBox(height: 4),
 
                 // 2. Chapter Skip Bar & Dropdown Select
@@ -1139,19 +1337,33 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   data: (comic) {
                     ServerModel? matchedServer;
                     for (final srv in comic.chapters) {
-                      if (srv.serverData.any((c) => c.chapterSlug == widget.chapterSlug)) {
+                      if (srv.serverData.any(
+                        (c) => c.chapterSlug == widget.chapterSlug,
+                      )) {
                         matchedServer = srv;
                         break;
                       }
                     }
-                    final server = matchedServer ?? (comic.chapters.isNotEmpty ? comic.chapters.first : null);
-                    final chaptersList = server != null ? server.serverData : <ChapterModel>[];
-                    final currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
-                    
-                    final hasPrev = currentIdx != -1 && currentIdx < chaptersList.length - 1;
+                    final server =
+                        matchedServer ??
+                        (comic.chapters.isNotEmpty
+                            ? comic.chapters.first
+                            : null);
+                    final chaptersList = server != null
+                        ? server.serverData
+                        : <ChapterModel>[];
+                    final currentIdx = chaptersList.indexWhere(
+                      (c) => c.chapterSlug == widget.chapterSlug,
+                    );
+
+                    final hasPrev =
+                        currentIdx != -1 &&
+                        currentIdx < chaptersList.length - 1;
                     final hasNext = currentIdx > 0;
-                    
-                    String currentChapterName = widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
+
+                    String currentChapterName =
+                        widget.chapterName ??
+                        widget.chapterSlug.replaceAll('chap-', '');
                     if (currentIdx != -1) {
                       currentChapterName = chaptersList[currentIdx].chapterName;
                     }
@@ -1161,7 +1373,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                       children: [
                         // Skip to older chapter
                         IconButton(
-                          onPressed: hasPrev ? () => _changeChapter(chaptersList[currentIdx + 1], comic) : null,
+                          onPressed: hasPrev
+                              ? () => _changeChapter(
+                                  chaptersList[currentIdx + 1],
+                                  comic,
+                                )
+                              : null,
                           icon: Icon(
                             Icons.skip_previous,
                             color: hasPrev ? Colors.white : Colors.white24,
@@ -1173,20 +1390,33 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                         // Dropdown chapter selector trigger
                         Expanded(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                            ),
                             child: InkWell(
                               onTap: () {
                                 if (chaptersList.isNotEmpty) {
-                                  _showChapterSelectionSheet(context, chaptersList, currentIdx, comic);
+                                  _showChapterSelectionSheet(
+                                    context,
+                                    chaptersList,
+                                    currentIdx,
+                                    comic,
+                                  );
                                 }
                               },
                               borderRadius: BorderRadius.circular(20),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                  horizontal: 16,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.white10,
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white24, width: 0.8),
+                                  border: Border.all(
+                                    color: Colors.white24,
+                                    width: 0.8,
+                                  ),
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -1219,7 +1449,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
                         // Skip to newer chapter
                         IconButton(
-                          onPressed: hasNext ? () => _changeChapter(chaptersList[currentIdx - 1], comic) : null,
+                          onPressed: hasNext
+                              ? () => _changeChapter(
+                                  chaptersList[currentIdx - 1],
+                                  comic,
+                                )
+                              : null,
                           icon: Icon(
                             Icons.skip_next,
                             color: hasNext ? Colors.white : Colors.white24,
@@ -1250,7 +1485,8 @@ class _VerticalPageItem extends StatefulWidget {
   State<_VerticalPageItem> createState() => _VerticalPageItemState();
 }
 
-class _VerticalPageItemState extends State<_VerticalPageItem> with AutomaticKeepAliveClientMixin {
+class _VerticalPageItemState extends State<_VerticalPageItem>
+    with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -1265,7 +1501,10 @@ class _VerticalPageItemState extends State<_VerticalPageItem> with AutomaticKeep
         height: 400,
         color: Colors.black,
         child: const Center(
-          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primaryBlue,
+          ),
         ),
       ),
       errorWidget: (context, url, error) => Container(

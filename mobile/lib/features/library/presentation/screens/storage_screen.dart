@@ -14,7 +14,8 @@ class StorageScreen extends ConsumerStatefulWidget {
   ConsumerState<StorageScreen> createState() => _StorageScreenState();
 }
 
-class _StorageScreenState extends ConsumerState<StorageScreen> with SingleTickerProviderStateMixin {
+class _StorageScreenState extends ConsumerState<StorageScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   @override
@@ -37,7 +38,9 @@ class _StorageScreenState extends ConsumerState<StorageScreen> with SingleTicker
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Xóa lịch sử'),
-        content: const Text('Bạn có chắc chắn muốn xóa toàn bộ lịch sử đọc truyện không?'),
+        content: const Text(
+          'Bạn có chắc chắn muốn xóa toàn bộ lịch sử đọc truyện không?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -73,28 +76,7 @@ class _StorageScreenState extends ConsumerState<StorageScreen> with SingleTicker
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
-        titleSpacing: 0,
-        title: Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: 220,
-            child: TabBar(
-              controller: _tabController,
-              isScrollable: false,
-              dividerColor: Colors.transparent,
-              indicatorColor: AppColors.primaryBlue,
-              indicatorSize: TabBarIndicatorSize.label,
-              labelColor: isDark ? Colors.white : Colors.black,
-              unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
-              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
-              tabs: const [
-                Tab(text: 'Yêu thích'),
-                Tab(text: 'Lịch sử'),
-              ],
-            ),
-          ),
-        ),
+        title: const Text('Kệ sách'),
         actions: [
           if (_tabController.index == 1)
             IconButton(
@@ -108,13 +90,55 @@ class _StorageScreenState extends ConsumerState<StorageScreen> with SingleTicker
             onPressed: () => context.push('/search'),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: TabBar(
+              controller: _tabController,
+              dividerColor: Colors.transparent,
+              indicatorColor: AppColors.primaryBlue,
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorWeight: 3,
+              labelColor: isDark ? Colors.white : Colors.black,
+              unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 15,
+              ),
+              tabs: const [
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.favorite_border_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text('Yêu thích'),
+                    ],
+                  ),
+                ),
+                Tab(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.history_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text('Lịch sử'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [
-          FavoritesContent(),
-          HistoryContent(),
-        ],
+        children: const [FavoritesContent(), HistoryContent()],
       ),
     );
   }

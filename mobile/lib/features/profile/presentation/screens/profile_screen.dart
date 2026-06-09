@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/colors.dart';
-import '../../../../core/storage/local_storage.dart';
 import '../../../auth/presentation/auth_notifier.dart';
 import '../../../../core/services/update_service.dart';
 import '../../../library/data/library_repository.dart';
@@ -42,7 +41,10 @@ class ProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cá nhân', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Cá nhân',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: false,
         titleSpacing: 16,
         leading: Navigator.canPop(context) ? const BackButton() : null,
@@ -53,12 +55,22 @@ class ProfileScreen extends ConsumerWidget {
               child: TextButton(
                 onPressed: () => _handleLogout(context, ref),
                 style: TextButton.styleFrom(
-                  backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.12),
+                  backgroundColor: isDark
+                      ? const Color(0xFF2C2C2C)
+                      : Colors.grey.withValues(alpha: 0.12),
                   foregroundColor: isDark ? Colors.white : Colors.black87,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                 ),
-                child: const Text('Đăng xuất', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                child: const Text(
+                  'Đăng xuất',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
               ),
             )
           else
@@ -69,10 +81,18 @@ class ProfileScreen extends ConsumerWidget {
                 style: TextButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                 ),
-                child: const Text('Đăng nhập', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                child: const Text(
+                  'Đăng nhập',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                ),
               ),
             ),
         ],
@@ -103,12 +123,16 @@ class ProfileScreen extends ConsumerWidget {
                   color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.black.withValues(alpha: 0.03),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.08 : 0.02),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.08 : 0.02,
+                      ),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -148,12 +172,16 @@ class ProfileScreen extends ConsumerWidget {
                   color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.04)
+                        : Colors.black.withValues(alpha: 0.03),
                     width: 1,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.08 : 0.02),
+                      color: Colors.black.withValues(
+                        alpha: isDark ? 0.08 : 0.02,
+                      ),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -170,7 +198,9 @@ class ProfileScreen extends ConsumerWidget {
                           context: context,
                           builder: (context) => AlertDialog(
                             title: const Text('RockyDex'),
-                            content: const Text('Cảm ơn bạn đã giới thiệu RockyDex với bạn bè! Link tải app: https://github.com/NgocThachTN/RockyDexMobile'),
+                            content: const Text(
+                              'Cảm ơn bạn đã giới thiệu RockyDex với bạn bè! Link tải app: https://github.com/NgocThachTN/RockyDexMobile',
+                            ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(context),
@@ -208,8 +238,14 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 36,
-                backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.15),
-                child: Icon(Icons.person_outline_rounded, size: 36, color: isDark ? Colors.white60 : Colors.black54),
+                backgroundColor: isDark
+                    ? const Color(0xFF2C2C2C)
+                    : Colors.grey.withValues(alpha: 0.15),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  size: 36,
+                  color: isDark ? Colors.white60 : Colors.black54,
+                ),
               ),
               Positioned(
                 right: 0,
@@ -219,9 +255,16 @@ class ProfileScreen extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                     shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? const Color(0xFF1E1E1E) : Colors.white, width: 1.5),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      width: 1.5,
+                    ),
                   ),
-                  child: Icon(Icons.add_a_photo_outlined, size: 10, color: isDark ? Colors.white60 : Colors.black54),
+                  child: Icon(
+                    Icons.add_a_photo_outlined,
+                    size: 10,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
                 ),
               ),
             ],
@@ -256,10 +299,16 @@ class ProfileScreen extends ConsumerWidget {
             children: [
               CircleAvatar(
                 radius: 36,
-                backgroundColor: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.15),
+                backgroundColor: isDark
+                    ? const Color(0xFF2C2C2C)
+                    : Colors.grey.withValues(alpha: 0.15),
                 backgroundImage: hasAvatar ? NetworkImage(avatarUrl) : null,
                 child: !hasAvatar
-                    ? Icon(Icons.person_outline_rounded, size: 36, color: isDark ? Colors.white60 : Colors.black54)
+                    ? Icon(
+                        Icons.person_outline_rounded,
+                        size: 36,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      )
                     : null,
               ),
               Positioned(
@@ -268,11 +317,20 @@ class ProfileScreen extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.2),
+                    color: isDark
+                        ? const Color(0xFF2C2C2C)
+                        : Colors.grey.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
-                    border: Border.all(color: isDark ? const Color(0xFF2C2C2C) : Colors.white, width: 1.5),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF2C2C2C) : Colors.white,
+                      width: 1.5,
+                    ),
                   ),
-                  child: const Icon(Icons.add_a_photo_outlined, size: 10, color: Colors.white),
+                  child: const Icon(
+                    Icons.add_a_photo_outlined,
+                    size: 10,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],
@@ -286,7 +344,10 @@ class ProfileScreen extends ConsumerWidget {
                   user.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -313,12 +374,14 @@ class ProfileScreen extends ConsumerWidget {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.black.withValues(alpha: 0.03),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.12 : 0.03),
+            color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.03),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -330,7 +393,12 @@ class ProfileScreen extends ConsumerWidget {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 8.0),
+      padding: const EdgeInsets.only(
+        left: 20.0,
+        right: 20.0,
+        top: 16.0,
+        bottom: 8.0,
+      ),
       child: Text(
         title,
         style: const TextStyle(
@@ -353,7 +421,7 @@ class ProfileScreen extends ConsumerWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: AppColors.primaryBlue.withOpacity(0.08),
+          color: AppColors.primaryBlue.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: AppColors.primaryBlue, size: 18),
@@ -363,13 +431,17 @@ class ProfileScreen extends ConsumerWidget {
         style: TextStyle(
           fontSize: 13.5,
           fontWeight: FontWeight.w600,
-          color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+          color: isDark
+              ? AppColors.textDarkPrimary
+              : AppColors.textLightPrimary,
         ),
       ),
       trailing: Icon(
         Icons.chevron_right_rounded,
         size: 18,
-        color: isDark ? Colors.white.withOpacity(0.3) : Colors.black.withOpacity(0.3),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.3)
+            : Colors.black.withValues(alpha: 0.3),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
       onTap: onTap,
@@ -383,8 +455,12 @@ class ProfileScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
-            'Phiên bản: 1.1.8',
-            style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.w500),
+            'Phiên bản: 1.2.0',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(width: 8),
           GestureDetector(
@@ -401,5 +477,4 @@ class ProfileScreen extends ConsumerWidget {
       ),
     );
   }
-
 }

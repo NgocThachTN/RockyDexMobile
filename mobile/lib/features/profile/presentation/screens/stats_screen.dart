@@ -17,9 +17,9 @@ final readingStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
 
   final favorites = await LocalStorage.getFavorites();
   final history = await LocalStorage.getHistoryList();
-  
+
   final uniqueComicsRead = history.map((e) => e['comic_slug']).toSet().length;
-  
+
   final totalChaptersRead = history.fold<int>(0, (sum, item) {
     final progress = item['progress_percent'] as int? ?? 0;
     return sum + (progress / 10).floor() + 1;
@@ -39,7 +39,8 @@ class StatsScreen extends ConsumerStatefulWidget {
   ConsumerState<StatsScreen> createState() => _StatsScreenState();
 }
 
-class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProviderStateMixin {
+class _StatsScreenState extends ConsumerState<StatsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -67,7 +68,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
       final dt = DateTime.parse(dateStr).toLocal();
       final now = DateTime.now();
       final diff = now.difference(dt);
-      
+
       if (diff.inSeconds < 60) {
         return 'Vừa xong';
       } else if (diff.inMinutes < 60) {
@@ -117,7 +118,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
           icon: Icon(
             Icons.arrow_back_ios_new_rounded,
             size: 20,
-            color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+            color: isDark
+                ? AppColors.textDarkPrimary
+                : AppColors.textLightPrimary,
           ),
           onPressed: () => context.pop(),
         ),
@@ -129,7 +132,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
           children: [
             // 1. Dashboard card (Overview metrics)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: _buildDashboardCard(isDark, statsAsync),
             ),
             const SizedBox(height: 12),
@@ -141,7 +147,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                 color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.04)
+                      : Colors.black.withValues(alpha: 0.04),
                   width: 1,
                 ),
               ),
@@ -162,7 +170,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                       children: [
                         Icon(Icons.history_rounded, size: 18),
                         SizedBox(width: 6),
-                        Text('Lịch sử đọc', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(
+                          'Lịch sử đọc',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -172,7 +186,13 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                       children: [
                         Icon(Icons.favorite_rounded, size: 18),
                         SizedBox(width: 6),
-                        Text('Yêu thích', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(
+                          'Yêu thích',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -200,19 +220,24 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildDashboardCard(bool isDark, AsyncValue<Map<String, dynamic>> statsAsync) {
+  Widget _buildDashboardCard(
+    bool isDark,
+    AsyncValue<Map<String, dynamic>> statsAsync,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.04)
+              : Colors.black.withValues(alpha: 0.03),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.08 : 0.02),
+            color: Colors.black.withValues(alpha: isDark ? 0.08 : 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -253,11 +278,17 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
         loading: () => const SizedBox(
           height: 60,
           child: Center(
-            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primaryBlue,
+            ),
           ),
         ),
         error: (err, _) => Center(
-          child: Text('Lỗi tải dữ liệu: $err', style: const TextStyle(color: AppColors.error, fontSize: 13)),
+          child: Text(
+            'Lỗi tải dữ liệu: $err',
+            style: const TextStyle(color: AppColors.error, fontSize: 13),
+          ),
         ),
       ),
     );
@@ -275,7 +306,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.08),
+              color: color.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 20),
@@ -300,7 +331,9 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
     return Container(
       width: 1,
       height: 45,
-      color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05),
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.06)
+          : Colors.black.withValues(alpha: 0.05),
     );
   }
 
@@ -314,7 +347,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
               children: [
                 Icon(Icons.history_rounded, size: 48, color: Colors.grey),
                 SizedBox(height: 12),
-                Text('Chưa có lịch sử đọc truyện', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(
+                  'Chưa có lịch sử đọc truyện',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
               ],
             ),
           );
@@ -368,14 +404,21 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                                     fit: BoxFit.cover,
                                     width: double.infinity,
                                     height: double.infinity,
-                                    fadeInDuration: const Duration(milliseconds: 250),
+                                    fadeInDuration: const Duration(
+                                      milliseconds: 250,
+                                    ),
                                     placeholder: (context, url) => Container(
                                       color: Theme.of(context).cardColor,
                                     ),
-                                    errorWidget: (context, url, error) => Container(
-                                      color: Theme.of(context).cardColor,
-                                      child: const Icon(Icons.broken_image, size: 24, color: Colors.grey),
-                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                          color: Theme.of(context).cardColor,
+                                          child: const Icon(
+                                            Icons.broken_image,
+                                            size: 24,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
                                   ),
                                 ),
                               ),
@@ -391,9 +434,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                               children: [
                                 Container(
                                   width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                    horizontal: 6,
+                                  ),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.65),
+                                    color: Colors.black.withValues(alpha: 0.65),
                                     borderRadius: const BorderRadius.only(
                                       bottomLeft: Radius.circular(8),
                                       bottomRight: Radius.circular(8),
@@ -417,45 +463,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                                   child: LinearProgressIndicator(
                                     value: progress / 100.0,
                                     backgroundColor: Colors.transparent,
-                                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryBlue),
+                                    valueColor:
+                                        const AlwaysStoppedAnimation<Color>(
+                                          AppColors.primaryBlue,
+                                        ),
                                     minHeight: 3,
                                   ),
                                 ),
                               ],
-                            ),
-                          ),
-                          // Fast Read overlay Button
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: GestureDetector(
-                              onTap: () {
-                                final chapterSlug = item['chapter_slug'] as String? ?? '';
-                                if (chapterSlug.isNotEmpty) {
-                                  context.push(
-                                    '/reader/$slug/$chapterSlug',
-                                    extra: {
-                                      'comic_name': name,
-                                      'comic_thumb': thumb,
-                                      'chapter_name': chapName,
-                                    },
-                                  );
-                                } else {
-                                  context.push('/comic/$slug');
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryBlue.withOpacity(0.85),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.play_arrow_rounded,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
-                              ),
                             ),
                           ),
                         ],
@@ -467,7 +482,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.5,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     // Chapter Name
@@ -491,13 +509,18 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
         );
       },
       loading: () => const Center(
-        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primaryBlue,
+        ),
       ),
       error: (err, _) => Center(child: Text('Lỗi: $err')),
     );
   }
 
-  Widget _buildFavoritesTab(AsyncValue<List<Map<String, dynamic>>> favoritesAsync) {
+  Widget _buildFavoritesTab(
+    AsyncValue<List<Map<String, dynamic>>> favoritesAsync,
+  ) {
     return favoritesAsync.when(
       data: (list) {
         if (list.isEmpty) {
@@ -505,9 +528,16 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.favorite_border_rounded, size: 48, color: Colors.grey),
+                Icon(
+                  Icons.favorite_border_rounded,
+                  size: 48,
+                  color: Colors.grey,
+                ),
                 SizedBox(height: 12),
-                Text('Chưa có truyện yêu thích', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                Text(
+                  'Chưa có truyện yêu thích',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
               ],
             ),
           );
@@ -557,12 +587,15 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                               width: double.infinity,
                               height: double.infinity,
                               fadeInDuration: const Duration(milliseconds: 250),
-                              placeholder: (context, url) => Container(
-                                color: Theme.of(context).cardColor,
-                              ),
+                              placeholder: (context, url) =>
+                                  Container(color: Theme.of(context).cardColor),
                               errorWidget: (context, url, error) => Container(
                                 color: Theme.of(context).cardColor,
-                                child: const Icon(Icons.broken_image, size: 24, color: Colors.grey),
+                                child: const Icon(
+                                  Icons.broken_image,
+                                  size: 24,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           ),
@@ -575,7 +608,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
                       name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11.5,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     // Favorite date
@@ -595,7 +631,10 @@ class _StatsScreenState extends ConsumerState<StatsScreen> with SingleTickerProv
         );
       },
       loading: () => const Center(
-        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primaryBlue,
+        ),
       ),
       error: (err, _) => Center(child: Text('Lỗi: $err')),
     );

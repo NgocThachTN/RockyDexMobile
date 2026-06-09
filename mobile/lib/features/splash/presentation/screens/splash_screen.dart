@@ -9,7 +9,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _logoScale;
   late Animation<double> _logoOpacity;
@@ -26,7 +27,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
       duration: const Duration(milliseconds: 2200),
     );
 
-    // Logo animates first: scale and fade in
     _logoScale = Tween<double>(begin: 0.4, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -39,33 +39,25 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
         curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
       ),
     );
-
-    // Soft glow pulse background animation
     _glowOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(0.2, 0.8, curve: Curves.easeInOut),
       ),
     );
-
-    // Title slides up slightly and fades in
-    _titleSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
+    _titleSlide = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.3, 0.8, curve: Curves.easeOutCubic),
+          ),
+        );
     _titleOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
         curve: const Interval(0.3, 0.7, curve: Curves.easeIn),
       ),
     );
-
-    // Subtitle fades in last
     _subtitleOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
@@ -75,7 +67,6 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     _controller.forward();
 
-    // Navigate to home after delay
     Future.delayed(const Duration(milliseconds: 3200), () {
       if (mounted) {
         context.go('/home');
@@ -101,144 +92,138 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: isDark
-                ? [
-                    const Color(0xFF0F172A), // Deep Slate Blue-Gray
-                    AppColors.bgDark,       // Deep Charcoal-Gray
-                  ]
-                : [
-                    const Color(0xFFE8F0FE), // Very light primary blue tint
-                    AppColors.bgLight,      // Light Cool Gray
-                  ],
+                ? [const Color(0xFF0F172A), AppColors.bgDark]
+                : [const Color(0xFFE8F0FE), AppColors.bgLight],
           ),
         ),
         child: Stack(
           children: [
-            // Decorative background glowing circle
-            Positioned(
-              top: -100,
-              right: -100,
-              child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: primaryColor.withOpacity(isDark ? 0.06 : 0.04),
-                ),
-              ),
-            ),
             Center(
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo stack with soft glowing background
-                      Stack(
-                        alignment: Alignment.center,
+                  return SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Glowing backdrop
+                          Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              FadeTransition(
+                                opacity: _glowOpacity,
+                                child: Container(
+                                  width: 128,
+                                  height: 128,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(32),
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        primaryColor.withValues(
+                                          alpha: isDark ? 0.22 : 0.16,
+                                        ),
+                                        primaryColor.withValues(alpha: 0.0),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              FadeTransition(
+                                opacity: _logoOpacity,
+                                child: ScaleTransition(
+                                  scale: _logoScale,
+                                  child: Hero(
+                                    tag: 'app_logo',
+                                    child: Image.asset(
+                                      'assets/images/app_icon.png',
+                                      width: 104,
+                                      height: 104,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 22),
                           FadeTransition(
-                            opacity: _glowOpacity,
-                            child: Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [
-                                    primaryColor.withOpacity(isDark ? 0.20 : 0.15),
-                                    primaryColor.withOpacity(0.0),
+                            opacity: _titleOpacity,
+                            child: SlideTransition(
+                              position: _titleSlide,
+                              child: Text(
+                                'RockyDex',
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.w800,
+                                  color: isDark
+                                      ? AppColors.textDarkPrimary
+                                      : AppColors.textLightPrimary,
+                                  letterSpacing: 0,
+                                  shadows: [
+                                    Shadow(
+                                      color: primaryColor.withValues(
+                                        alpha: 0.18,
+                                      ),
+                                      offset: const Offset(0, 3),
+                                      blurRadius: 8,
+                                    ),
                                   ],
                                 ),
                               ),
                             ),
                           ),
-                          // Transparent Logo
+                          const SizedBox(height: 10),
                           FadeTransition(
-                            opacity: _logoOpacity,
-                            child: ScaleTransition(
-                              scale: _logoScale,
-                              child: Hero(
-                                tag: 'app_logo',
-                                child: Image.asset(
-                                  'assets/images/app_icon.png',
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.contain,
-                                ),
+                            opacity: _subtitleOpacity,
+                            child: Text(
+                              'Thế giới Manga trong tầm tay',
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                height: 1.35,
+                                color: isDark
+                                    ? AppColors.textDarkSecondary
+                                    : AppColors.textLightSecondary,
+                                fontWeight: FontWeight.w500,
+                                fontStyle: FontStyle.italic,
+                                letterSpacing: 0,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      // App Title & Subtitle pulled closer to the logo
-                      Transform.translate(
-                        offset: const Offset(0, -35),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // App Title
-                            FadeTransition(
-                              opacity: _titleOpacity,
-                              child: SlideTransition(
-                                position: _titleSlide,
-                                child: Text(
-                                  'RockyDex',
-                                  style: TextStyle(
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.bold,
-                                    color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
-                                    letterSpacing: 1.5,
-                                    shadows: [
-                                      Shadow(
-                                        color: primaryColor.withOpacity(0.2),
-                                        offset: const Offset(0, 2),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            // Subtitle
-                            FadeTransition(
-                              opacity: _subtitleOpacity,
-                              child: Text(
-                                'Thế giới Manga trong tầm tay',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
-                                  fontStyle: FontStyle.italic,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ),
                   );
                 },
               ),
             ),
-            // Footer/Version info
             Positioned(
               bottom: 24,
               left: 0,
               right: 0,
-              child: Center(
-                child: FadeTransition(
-                  opacity: _subtitleOpacity,
-                  child: Text(
-                    'v1.1.8',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: isDark
-                          ? AppColors.textDarkSecondary.withOpacity(0.4)
-                          : AppColors.textLightSecondary.withOpacity(0.4),
-                      letterSpacing: 1.0,
+              child: SafeArea(
+                top: false,
+                child: Center(
+                  child: FadeTransition(
+                    opacity: _subtitleOpacity,
+                    child: Text(
+                      'v1.2.0',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppColors.textDarkSecondary.withValues(
+                                alpha: 0.45,
+                              )
+                            : AppColors.textLightSecondary.withValues(
+                                alpha: 0.45,
+                              ),
+                        letterSpacing: 0,
+                      ),
                     ),
                   ),
                 ),
