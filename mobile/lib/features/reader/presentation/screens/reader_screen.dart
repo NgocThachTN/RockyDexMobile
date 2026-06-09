@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
@@ -38,6 +39,8 @@ class ReaderScreen extends ConsumerStatefulWidget {
 }
 
 class _ReaderScreenState extends ConsumerState<ReaderScreen> {
+  static const double _chapterSheetItemExtent = 64.0;
+
   bool _showUI = true;
   int _currentPage = 1;
   int _totalPages = 1;
@@ -240,7 +243,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     final chapterAsync = initialApiDataUrl.isNotEmpty
         ? ref.watch(readerChapterDetailProvider(initialApiDataUrl))
         : const AsyncValue<ChapterDetailInfoModel>.loading();
-    final settings = ref.watch(readerSettingsProvider);
+    final layout = ref.watch(
+      readerSettingsProvider.select((settings) => settings.layout),
+    );
     final comicDetailAsync = ref.watch(comicDetailProvider(widget.comicSlug));
 
     List<ChapterModel> chaptersList = [];
@@ -292,7 +297,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         children: [
           // 1. Pages Viewer
           GestureDetector(
-            onTap: settings.layout == 'horizontal'
+            onTap: layout == 'horizontal'
                 ? null
                 : _toggleUI, // Taps are handled by overlay in horizontal layout
             child: chapterAsync.when(
@@ -330,7 +335,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                         setState(() {
                           _currentPage = savedPage;
                         });
-                        if (settings.layout == 'horizontal') {
+                        if (layout == 'horizontal') {
                           _pageController.jumpToPage(savedPage);
                         } else {
                           if (_scrollController.hasClients) {
@@ -346,7 +351,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   });
                 }
 
-                if (settings.layout == 'horizontal') {
+                if (layout == 'horizontal') {
                   return _buildHorizontalGallery(
                     urls: imageUrls,
                     hasNext: hasNext,
@@ -391,18 +396,28 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           ),
 
           // 2. Brightness Overlay
-          IgnorePointer(
-            child: Container(
-              color: Colors.black.withValues(alpha: 1.0 - settings.brightness),
-            ),
-          ),
+          const _ReaderBrightnessOverlay(),
 
           // 3. Top Navigation Bar Overlay
-          if (_showUI) _buildTopBar(context, chapterAsync),
+          if (_showUI)
+            _buildTopBar(
+              context,
+              chapterAsync,
+              comicDetail,
+              chaptersList,
+              currentIdx,
+            ),
 
           // 4. Bottom Controls Overlay
           if (_showUI)
-            _buildBottomControlsCompact(context, settings, comicDetailAsync),
+            _buildBottomControlsCompact(
+              context,
+              comicDetail,
+              chaptersList,
+              currentIdx,
+              hasPrev,
+              hasNext,
+            ),
         ],
       ),
     );
@@ -894,38 +909,20 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   Widget _buildTopBar(
     BuildContext context,
     AsyncValue<ChapterDetailInfoModel> chapterAsync,
+    ComicDetailInfoModel? comicDetail,
+    List<ChapterModel> chaptersList,
+    int currentIdx,
   ) {
-    final comicDetailState = ref.watch(comicDetailProvider(widget.comicSlug));
-    final settings = ref.watch(readerSettingsProvider);
     final topInset = MediaQuery.of(context).padding.top;
 
     String title = 'Đang tải...';
-    if (comicDetailState.hasValue) {
-      final comic = comicDetailState.value!;
+    if (comicDetail != null) {
+      final comic = comicDetail;
       final comicName = comic.name;
       String chapterName = widget.chapterSlug.replaceAll('chap-', '');
 
-      // Find matching chapter name
-      ServerModel? matchedServer;
-      for (final srv in comic.chapters) {
-        if (srv.serverData.any((c) => c.chapterSlug == widget.chapterSlug)) {
-          matchedServer = srv;
-          break;
-        }
-      }
-      final server =
-          matchedServer ??
-          (comic.chapters.isNotEmpty ? comic.chapters.first : null);
-      if (server != null) {
-        final matchedChapter = server.serverData.firstWhere(
-          (c) => c.chapterSlug == widget.chapterSlug,
-          orElse: () => ChapterModel(
-            filename: '',
-            chapterName: chapterName,
-            chapterTitle: '',
-            chapterApiData: '',
-          ),
-        );
+      if (currentIdx >= 0 && currentIdx < chaptersList.length) {
+        final matchedChapter = chaptersList[currentIdx];
         if (matchedChapter.chapterName.isNotEmpty) {
           chapterName = matchedChapter.chapterName;
         }
@@ -1063,7 +1060,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     size: 20,
                   ),
                   tooltip: 'Cài đặt trình đọc',
-                  onPressed: () => _showReaderSettingsSheet(context, settings),
+                  onPressed: () => _showReaderSettingsSheet(context),
                 ),
               ),
             ),
@@ -1073,7 +1070,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
-  void _showReaderSettingsSheet(BuildContext context, ReaderSettings settings) {
+  void _showReaderSettingsSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.black.withValues(alpha: 0.9),
@@ -1084,8 +1081,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         ),
       ),
       builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
+        return Consumer(
+          builder: (context, ref, _) {
             final currentSettings = ref.watch(readerSettingsProvider);
             return SafeArea(
               child: Container(
@@ -1158,7 +1155,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                 ref
                                     .read(readerSettingsProvider.notifier)
                                     .updateLayout('vertical');
-                                setModalState(() {});
                               }
                             },
                           ),
@@ -1189,7 +1185,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                 ref
                                     .read(readerSettingsProvider.notifier)
                                     .updateLayout('horizontal');
-                                setModalState(() {});
                               }
                             },
                           ),
@@ -1226,7 +1221,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                               ref
                                   .read(readerSettingsProvider.notifier)
                                   .updateBrightness(val);
-                              setModalState(() {});
                             },
                           ),
                         ),
@@ -1301,7 +1295,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   }
 
   void _changeChapter(ChapterModel targetChap, ComicDetailInfoModel comic) {
-    if (_isChangingChapter) return;
+    if (!mounted || _isChangingChapter) return;
+    _flushReadingProgress();
     setState(() {
       _isChangingChapter = true;
     });
@@ -1317,270 +1312,277 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
-  void _showChapterSelectionSheet(
+  Future<void> _showChapterSelectionSheet(
     BuildContext context,
     List<ChapterModel> chapters,
     int currentIdx,
     ComicDetailInfoModel comic,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.black.withValues(alpha: 0.95),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-      ),
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.6,
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Danh Sách Chương (${chapters.length})',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.white70,
-                        size: 20,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(color: Colors.white24, height: 1),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: chapters.length,
-                  itemBuilder: (context, index) {
-                    final chap = chapters[index];
-                    final isCurrent = index == currentIdx;
+  ) async {
+    if (chapters.isEmpty) return;
 
-                    return ListTile(
-                      dense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 2,
-                      ),
-                      tileColor: isCurrent
-                          ? AppColors.primaryBlue.withValues(alpha: 0.15)
-                          : null,
-                      title: Text(
-                        'Chương ${chap.chapterName}',
-                        style: TextStyle(
-                          color: isCurrent
-                              ? AppColors.primaryBlue
-                              : Colors.white,
-                          fontWeight: isCurrent
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          fontSize: 14,
+    final mediaQuery = MediaQuery.of(context);
+    final sheetMaxHeight = mediaQuery.size.height * 0.68;
+    final listHeight = math.max(
+      0.0,
+      sheetMaxHeight - mediaQuery.padding.bottom - 58,
+    );
+    final maxScrollOffset = math.max(
+      0.0,
+      chapters.length * _chapterSheetItemExtent - listHeight,
+    );
+    final initialScrollOffset = currentIdx <= 0
+        ? 0.0
+        : (currentIdx * _chapterSheetItemExtent -
+                  listHeight / 2 +
+                  _chapterSheetItemExtent / 2)
+              .clamp(0.0, maxScrollOffset)
+              .toDouble();
+    final scrollController = ScrollController(
+      initialScrollOffset: initialScrollOffset,
+    );
+
+    ChapterModel? selectedChapter;
+    try {
+      selectedChapter = await showModalBottomSheet<ChapterModel>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.black.withValues(alpha: 0.95),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(16),
+            topRight: Radius.circular(16),
+          ),
+        ),
+        constraints: BoxConstraints(maxHeight: sheetMaxHeight),
+        builder: (sheetContext) {
+          return SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Danh Sách Chương (${chapters.length})',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.white,
                         ),
                       ),
-                      subtitle: chap.chapterTitle.isNotEmpty
-                          ? Text(
-                              chap.chapterTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: isCurrent
-                                    ? AppColors.primaryBlue.withValues(
-                                        alpha: 0.7,
-                                      )
-                                    : Colors.white60,
-                                fontSize: 11,
-                              ),
-                            )
-                          : null,
-                      trailing: isCurrent
-                          ? const Icon(
-                              Icons.check,
-                              color: AppColors.primaryBlue,
-                              size: 18,
-                            )
-                          : null,
-                      onTap: () {
-                        Navigator.pop(context); // Close bottom sheet
-                        if (!isCurrent) {
-                          _changeChapter(chap, comic);
-                        }
-                      },
-                    );
-                  },
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close,
+                          color: Colors.white70,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(sheetContext),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+                const Divider(color: Colors.white24, height: 1),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    itemExtent: _chapterSheetItemExtent,
+                    cacheExtent: _chapterSheetItemExtent * 8,
+                    addAutomaticKeepAlives: false,
+                    addSemanticIndexes: false,
+                    itemCount: chapters.length,
+                    itemBuilder: (context, index) {
+                      final chap = chapters[index];
+                      final isCurrent = index == currentIdx;
+
+                      return ListTile(
+                        dense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 2,
+                        ),
+                        tileColor: isCurrent
+                            ? AppColors.primaryBlue.withValues(alpha: 0.15)
+                            : null,
+                        title: Text(
+                          'Chương ${chap.chapterName}',
+                          style: TextStyle(
+                            color: isCurrent
+                                ? AppColors.primaryBlue
+                                : Colors.white,
+                            fontWeight: isCurrent
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: chap.chapterTitle.isNotEmpty
+                            ? Text(
+                                chap.chapterTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isCurrent
+                                      ? AppColors.primaryBlue.withValues(
+                                          alpha: 0.7,
+                                        )
+                                      : Colors.white60,
+                                  fontSize: 11,
+                                ),
+                              )
+                            : null,
+                        trailing: isCurrent
+                            ? const Icon(
+                                Icons.check,
+                                color: AppColors.primaryBlue,
+                                size: 18,
+                              )
+                            : null,
+                        onTap: () {
+                          Navigator.pop(sheetContext, isCurrent ? null : chap);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } finally {
+      scrollController.dispose();
+    }
+
+    if (!mounted || selectedChapter == null) return;
+
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    if (!mounted) return;
+    _changeChapter(selectedChapter, comic);
   }
 
   Widget _buildBottomControlsCompact(
     BuildContext context,
-    ReaderSettings settings,
-    AsyncValue<ComicDetailInfoModel> comicDetailAsync,
+    ComicDetailInfoModel? comic,
+    List<ChapterModel> chaptersList,
+    int currentIdx,
+    bool hasPrev,
+    bool hasNext,
   ) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
     final totalReadablePages = _totalPages < 1 ? 1 : _totalPages;
     final currentReadablePage = _currentPage.clamp(1, totalReadablePages);
 
+    if (comic == null) return const SizedBox.shrink();
+
+    String currentChapterName =
+        widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
+    if (currentIdx >= 0 && currentIdx < chaptersList.length) {
+      currentChapterName = chaptersList[currentIdx].chapterName;
+    }
+
     return Positioned(
       bottom: bottomInset + 12,
       left: 12,
       right: 12,
-      child: comicDetailAsync.when(
-        data: (comic) {
-          ServerModel? matchedServer;
-          for (final srv in comic.chapters) {
-            if (srv.serverData.any(
-              (c) => c.chapterSlug == widget.chapterSlug,
-            )) {
-              matchedServer = srv;
-              break;
-            }
-          }
-
-          final server =
-              matchedServer ??
-              (comic.chapters.isNotEmpty ? comic.chapters.first : null);
-          final chaptersList = server != null
-              ? server.serverData
-              : <ChapterModel>[];
-          final currentIdx = chaptersList.indexWhere(
-            (c) => c.chapterSlug == widget.chapterSlug,
-          );
-          final hasPrev =
-              _getPreviousChapterIndex(chaptersList, currentIdx) != null;
-          final hasNext =
-              _getNextChapterIndex(chaptersList, currentIdx) != null;
-
-          String currentChapterName =
-              widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
-          if (currentIdx != -1) {
-            currentChapterName = chaptersList[currentIdx].chapterName;
-          }
-
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _buildReaderGlassCircleButton(
-                icon: Icons.keyboard_arrow_left_rounded,
-                tooltip: 'Chương trước',
-                enabled: hasPrev,
-                onPressed: () =>
-                    _goToPreviousChapter(chaptersList, currentIdx, comic),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ClipRRect(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _buildReaderGlassCircleButton(
+            icon: Icons.keyboard_arrow_left_rounded,
+            tooltip: 'Chương trước',
+            enabled: hasPrev,
+            onPressed: () =>
+                _goToPreviousChapter(chaptersList, currentIdx, comic),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: InkWell(
+                  onTap: chaptersList.isEmpty
+                      ? null
+                      : () => _showChapterSelectionSheet(
+                          context,
+                          chaptersList,
+                          currentIdx,
+                          comic,
+                        ),
                   borderRadius: BorderRadius.circular(20),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                    child: InkWell(
-                      onTap: chaptersList.isEmpty
-                          ? null
-                          : () => _showChapterSelectionSheet(
-                              context,
-                              chaptersList,
-                              currentIdx,
-                              comic,
-                            ),
+                  child: Container(
+                    height: 40,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.58),
                       borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        height: 40,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.58),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            width: 0.8,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.25),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              '$currentReadablePage/$totalReadablePages',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Container(
-                              width: 1,
-                              height: 16,
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                              ),
-                              color: Colors.white.withValues(alpha: 0.18),
-                            ),
-                            Expanded(
-                              child: Text(
-                                'Chương $currentChapterName',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.keyboard_arrow_up,
-                              color: Colors.white70,
-                              size: 14,
-                            ),
-                          ],
-                        ),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        width: 0.8,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.25),
+                          blurRadius: 18,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          '$currentReadablePage/$totalReadablePages',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          height: 16,
+                          margin: const EdgeInsets.symmetric(horizontal: 10),
+                          color: Colors.white.withValues(alpha: 0.18),
+                        ),
+                        Expanded(
+                          child: Text(
+                            'Chương $currentChapterName',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.keyboard_arrow_up,
+                          color: Colors.white70,
+                          size: 14,
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              _buildReaderGlassCircleButton(
-                icon: Icons.keyboard_arrow_right_rounded,
-                tooltip: 'Chương sau',
-                enabled: hasNext,
-                onPressed: () =>
-                    _goToNextChapter(chaptersList, currentIdx, comic),
-              ),
-            ],
-          );
-        },
-        loading: () => const SizedBox.shrink(),
-        error: (_, __) => const SizedBox.shrink(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          _buildReaderGlassCircleButton(
+            icon: Icons.keyboard_arrow_right_rounded,
+            tooltip: 'Chương sau',
+            enabled: hasNext,
+            onPressed: () => _goToNextChapter(chaptersList, currentIdx, comic),
+          ),
+        ],
       ),
     );
   }
@@ -1891,6 +1893,21 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ReaderBrightnessOverlay extends ConsumerWidget {
+  const _ReaderBrightnessOverlay();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final brightness = ref.watch(
+      readerSettingsProvider.select((settings) => settings.brightness),
+    );
+
+    return IgnorePointer(
+      child: Container(color: Colors.black.withValues(alpha: 1.0 - brightness)),
     );
   }
 }

@@ -1,3 +1,10 @@
+Cập nhật v1.3.0:
+- Nâng cấp phiên bản lên v1.3.0+31 để phát hành OTA qua GitHub Releases.
+- Tối ưu bottom sheet chọn chương trong trình đọc: mở đúng vị trí chương hiện tại, list cố định chiều cao và giảm keep-alive để cuộn mượt hơn.
+- Giảm rebuild toàn màn đọc khi chỉnh độ sáng/cài đặt trình đọc, đồng thời debounce ghi cấu hình xuống bộ nhớ.
+- Làm mượt thao tác chuyển chương từ bottom sheet bằng cách đợi sheet đóng trước khi điều hướng sang chương mới.
+- Cập nhật fallback phiên bản cho Splash, Profile và website tải APK.
+
 Cập nhật v1.2.6:
 - Nâng cấp phiên bản lên v1.2.6+28.
 - Sửa chuyển chương trong chế độ đọc ngang: vuốt ngược qua trang đầu sẽ chuyển về chương trước nếu còn chương trước.

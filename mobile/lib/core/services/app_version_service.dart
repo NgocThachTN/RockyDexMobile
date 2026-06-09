@@ -1,7 +1,7 @@
 import 'package:package_info_plus/package_info_plus.dart';
 
 class AppVersionService {
-  static const fallbackVersion = '1.2.8';
+  static const fallbackVersion = '1.3.0';
   static const fallbackVersionLabel = 'v$fallbackVersion';
 
   static Future<String> displayVersionLabel() async {

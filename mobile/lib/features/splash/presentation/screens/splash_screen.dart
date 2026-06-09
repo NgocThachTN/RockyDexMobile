@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/constants/colors.dart';
@@ -20,6 +22,7 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _titleOpacity;
   late Animation<double> _subtitleOpacity;
   late final Future<String> _versionLabelFuture;
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -70,7 +73,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 3200), () {
+    _navigationTimer = Timer(const Duration(milliseconds: 3200), () {
       if (mounted) {
         context.go('/home');
       }
@@ -79,6 +82,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }

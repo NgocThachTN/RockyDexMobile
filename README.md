@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/NgocThachTN/RockyDexMobile/releases/latest">
-    <img src="https://img.shields.io/badge/Phiên_bản-v1.0.10-blue?style=flat-square&logo=github" alt="Latest Release">
+    <img src="https://img.shields.io/badge/Phiên_bản-v1.3.0-blue?style=flat-square&logo=github" alt="Latest Release">
   </a>
   <img src="https://img.shields.io/badge/Nền_tảng-Flutter-02569B?style=flat-square&logo=flutter" alt="Platform Flutter">
   <img src="https://img.shields.io/badge/Hệ_điều_hành-Android-3DDC84?style=flat-square&logo=android&logoColor=white" alt="OS Android">
