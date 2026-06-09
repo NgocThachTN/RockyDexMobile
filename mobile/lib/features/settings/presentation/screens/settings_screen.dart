@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -7,13 +9,19 @@ import '../../../../core/network/dio_client.dart';
 import '../../../../core/services/update_service.dart';
 import '../../../reader/presentation/reader_providers.dart';
 
-final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((
+  ref,
+) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return ThemeModeNotifier(prefs);
 });
 
 final packageInfoProvider = FutureProvider<PackageInfo>((ref) async {
   return PackageInfo.fromPlatform();
+});
+
+final autoUpdateNotificationsProvider = FutureProvider<bool>((ref) {
+  return UpdateService.isAutoNotificationEnabled();
 });
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
@@ -54,21 +62,21 @@ class SettingsScreen extends ConsumerWidget {
     final currentTheme = ref.watch(themeModeProvider);
     final readerSettings = ref.watch(readerSettingsProvider);
     final packageInfoAsync = ref.watch(packageInfoProvider);
+    final autoUpdateNotificationsAsync = ref.watch(
+      autoUpdateNotificationsProvider,
+    );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cài Đặt'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Cài Đặt'), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // 1. Theme Settings
           Text(
             'Giao diện',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Card(
@@ -118,9 +126,9 @@ class SettingsScreen extends ConsumerWidget {
           // 2. Reader Settings
           Text(
             'Trình đọc truyện',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Card(
@@ -133,11 +141,17 @@ class SettingsScreen extends ConsumerWidget {
                         ? 'Cuộn dọc liên tục'
                         : 'Lướt ngang từng trang',
                   ),
-                  trailing: const Icon(Icons.swap_horiz, color: AppColors.primaryBlue),
+                  trailing: const Icon(
+                    Icons.swap_horiz,
+                    color: AppColors.primaryBlue,
+                  ),
                   onTap: () {
-                    final nextLayout =
-                        readerSettings.layout == 'vertical' ? 'horizontal' : 'vertical';
-                    ref.read(readerSettingsProvider.notifier).updateLayout(nextLayout);
+                    final nextLayout = readerSettings.layout == 'vertical'
+                        ? 'horizontal'
+                        : 'vertical';
+                    ref
+                        .read(readerSettingsProvider.notifier)
+                        .updateLayout(nextLayout);
                   },
                 ),
               ],
@@ -148,16 +162,19 @@ class SettingsScreen extends ConsumerWidget {
           // 3. Information & Updates
           Text(
             'Thông tin & Cập nhật',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Card(
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.info_outline, color: AppColors.primaryBlue),
+                  leading: const Icon(
+                    Icons.info_outline,
+                    color: AppColors.primaryBlue,
+                  ),
                   title: const Text('Phiên bản hiện tại'),
                   subtitle: packageInfoAsync.when(
                     data: (info) => Text('${info.version}+${info.buildNumber}'),
@@ -166,13 +183,48 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                 ),
                 const Divider(height: 1, indent: 16),
+                autoUpdateNotificationsAsync.when(
+                  data: (enabled) => SwitchListTile(
+                    secondary: const Icon(
+                      Icons.notifications_active_outlined,
+                      color: AppColors.primaryBlue,
+                    ),
+                    title: const Text('Thông báo cập nhật tự động'),
+                    subtitle: const Text('Tự báo khi GitHub có bản APK mới'),
+                    value: enabled,
+                    activeThumbColor: AppColors.primaryBlue,
+                    onChanged: (value) async {
+                      await UpdateService.setAutoNotificationEnabled(value);
+                      ref.invalidate(autoUpdateNotificationsProvider);
+                      if (context.mounted && value) {
+                        UpdateService.checkAndNotifyForUpdates(context);
+                      }
+                    },
+                  ),
+                  loading: () => const ListTile(
+                    leading: Icon(
+                      Icons.notifications_active_outlined,
+                      color: AppColors.primaryBlue,
+                    ),
+                    title: Text('Thông báo cập nhật tự động'),
+                    subtitle: Text('Đang tải...'),
+                  ),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+                const Divider(height: 1, indent: 16),
                 ListTile(
-                  leading: const Icon(Icons.system_update_alt_rounded, color: AppColors.primaryBlue),
+                  leading: const Icon(
+                    Icons.system_update_alt_rounded,
+                    color: AppColors.primaryBlue,
+                  ),
                   title: const Text('Kiểm tra cập nhật'),
                   subtitle: const Text('Kiểm tra phiên bản mới nhất từ GitHub'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    UpdateService.checkForUpdates(context, showNoUpdatePrompt: true);
+                    UpdateService.checkForUpdates(
+                      context,
+                      showNoUpdatePrompt: true,
+                    );
                   },
                 ),
               ],

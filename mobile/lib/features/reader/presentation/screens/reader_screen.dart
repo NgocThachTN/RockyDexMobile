@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,8 +46,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   bool _isChangingChapter = false;
   String? _resolvedApiDataUrl;
   bool _initialPageJumped = false;
-  bool _shouldChangeChapterOnRelease = false;
-  bool _shouldChangeToPrevChapterOnRelease = false;
 
   @override
   void initState() {
@@ -353,6 +350,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             ..._buildHorizontalTapOverlay(
               context: context,
               hasNext: hasNext,
+              hasPrev: hasPrev,
               chaptersList: chaptersList,
               currentIdx: currentIdx,
               comicDetail: comicDetail,
@@ -370,7 +368,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
           // 4. Bottom Controls Overlay
           if (_showUI)
-            _buildBottomControls(context, settings, comicDetailAsync),
+            _buildBottomControlsCompact(context, settings, comicDetailAsync),
         ],
       ),
     );
@@ -379,6 +377,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   List<Widget> _buildHorizontalTapOverlay({
     required BuildContext context,
     required bool hasNext,
+    required bool hasPrev,
     required List<ChapterModel> chaptersList,
     required int currentIdx,
     required ComicDetailInfoModel? comicDetail,
@@ -399,6 +398,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
               );
+            } else if (hasPrev && comicDetail != null) {
+              _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
             }
           },
         ),
@@ -417,14 +418,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
               );
-            } else if (_currentPage == _totalPages &&
-                hasNext &&
-                !_isChangingChapter &&
-                comicDetail != null) {
-              setState(() {
-                _isChangingChapter = true;
-              });
-              _changeChapter(chaptersList[currentIdx - 1], comicDetail);
+            } else if (hasNext && comicDetail != null) {
+              _goToNextChapter(chaptersList, currentIdx, comicDetail);
             }
           },
         ),
@@ -453,43 +448,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   }) {
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification notification) {
-        final metrics = notification.metrics;
-        if (notification is ScrollUpdateNotification) {
-          if (metrics.pixels >= metrics.maxScrollExtent + 35) {
-            _shouldChangeChapterOnRelease = true;
+        if (notification is OverscrollNotification && comicDetail != null) {
+          if (notification.overscroll > 14 && hasNext) {
+            _goToNextChapter(chaptersList, currentIdx, comicDetail);
+            return true;
           }
-          if (metrics.pixels <= metrics.minScrollExtent - 35) {
-            _shouldChangeToPrevChapterOnRelease = true;
+          if (notification.overscroll < -14 && hasPrev) {
+            _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
+            return true;
           }
-        }
-        if (notification is UserScrollNotification &&
-            notification.direction == ScrollDirection.idle) {
-          if (_shouldChangeChapterOnRelease &&
-              hasNext &&
-              !_isChangingChapter &&
-              comicDetail != null) {
-            setState(() {
-              _isChangingChapter = true;
-              _shouldChangeChapterOnRelease = false;
-            });
-            _changeChapter(chaptersList[currentIdx - 1], comicDetail);
-          }
-          if (_shouldChangeToPrevChapterOnRelease &&
-              hasPrev &&
-              !_isChangingChapter &&
-              comicDetail != null) {
-            setState(() {
-              _isChangingChapter = true;
-              _shouldChangeToPrevChapterOnRelease = false;
-            });
-            _changeChapter(chaptersList[currentIdx + 1], comicDetail);
-          }
-        }
-        if (metrics.pixels < metrics.maxScrollExtent + 10) {
-          _shouldChangeChapterOnRelease = false;
-        }
-        if (metrics.pixels > metrics.minScrollExtent - 10) {
-          _shouldChangeToPrevChapterOnRelease = false;
         }
         return false;
       },
@@ -529,45 +496,17 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   }) {
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification notification) {
-        final metrics = notification.metrics;
-        if (notification is ScrollUpdateNotification) {
-          if (_currentPage == _totalPages &&
-              metrics.pixels >= metrics.maxScrollExtent + 25) {
-            _shouldChangeChapterOnRelease = true;
+        if (notification is OverscrollNotification && comicDetail != null) {
+          if (notification.overscroll > 10 &&
+              _currentPage >= _totalPages &&
+              hasNext) {
+            _goToNextChapter(chaptersList, currentIdx, comicDetail);
+            return true;
           }
-          if (_currentPage == 1 &&
-              metrics.pixels <= metrics.minScrollExtent - 25) {
-            _shouldChangeToPrevChapterOnRelease = true;
+          if (notification.overscroll < -10 && _currentPage <= 1 && hasPrev) {
+            _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
+            return true;
           }
-        }
-        if (notification is UserScrollNotification &&
-            notification.direction == ScrollDirection.idle) {
-          if (_shouldChangeChapterOnRelease &&
-              hasNext &&
-              !_isChangingChapter &&
-              comicDetail != null) {
-            setState(() {
-              _isChangingChapter = true;
-              _shouldChangeChapterOnRelease = false;
-            });
-            _changeChapter(chaptersList[currentIdx - 1], comicDetail);
-          }
-          if (_shouldChangeToPrevChapterOnRelease &&
-              hasPrev &&
-              !_isChangingChapter &&
-              comicDetail != null) {
-            setState(() {
-              _isChangingChapter = true;
-              _shouldChangeToPrevChapterOnRelease = false;
-            });
-            _changeChapter(chaptersList[currentIdx + 1], comicDetail);
-          }
-        }
-        if (metrics.pixels < metrics.maxScrollExtent + 5) {
-          _shouldChangeChapterOnRelease = false;
-        }
-        if (metrics.pixels > metrics.minScrollExtent - 5) {
-          _shouldChangeToPrevChapterOnRelease = false;
         }
         return false;
       },
@@ -1215,7 +1154,34 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
+  void _goToNextChapter(
+    List<ChapterModel> chapters,
+    int currentIdx,
+    ComicDetailInfoModel comic,
+  ) {
+    if (_isChangingChapter || currentIdx <= 0) return;
+    _changeChapter(chapters[currentIdx - 1], comic);
+  }
+
+  void _goToPreviousChapter(
+    List<ChapterModel> chapters,
+    int currentIdx,
+    ComicDetailInfoModel comic,
+  ) {
+    if (_isChangingChapter ||
+        currentIdx < 0 ||
+        currentIdx >= chapters.length - 1) {
+      return;
+    }
+    _changeChapter(chapters[currentIdx + 1], comic);
+  }
+
   void _changeChapter(ChapterModel targetChap, ComicDetailInfoModel comic) {
+    if (_isChangingChapter) return;
+    setState(() {
+      _isChangingChapter = true;
+    });
+
     context.pushReplacement(
       '/reader/${widget.comicSlug}/${targetChap.chapterSlug}',
       extra: {
@@ -1346,6 +1312,199 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
+  Widget _buildBottomControlsCompact(
+    BuildContext context,
+    ReaderSettings settings,
+    AsyncValue<ComicDetailInfoModel> comicDetailAsync,
+  ) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final totalReadablePages = settings.layout == 'horizontal'
+        ? (_totalPages - 1).clamp(1, _totalPages)
+        : _totalPages;
+    final currentReadablePage = _currentPage.clamp(1, totalReadablePages);
+
+    return Positioned(
+      bottom: bottomInset + 12,
+      left: 12,
+      right: 12,
+      child: comicDetailAsync.when(
+        data: (comic) {
+          ServerModel? matchedServer;
+          for (final srv in comic.chapters) {
+            if (srv.serverData.any(
+              (c) => c.chapterSlug == widget.chapterSlug,
+            )) {
+              matchedServer = srv;
+              break;
+            }
+          }
+
+          final server =
+              matchedServer ??
+              (comic.chapters.isNotEmpty ? comic.chapters.first : null);
+          final chaptersList = server != null
+              ? server.serverData
+              : <ChapterModel>[];
+          final currentIdx = chaptersList.indexWhere(
+            (c) => c.chapterSlug == widget.chapterSlug,
+          );
+          final hasPrev =
+              currentIdx != -1 && currentIdx < chaptersList.length - 1;
+          final hasNext = currentIdx > 0;
+
+          String currentChapterName =
+              widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
+          if (currentIdx != -1) {
+            currentChapterName = chaptersList[currentIdx].chapterName;
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _buildReaderGlassCircleButton(
+                icon: Icons.keyboard_arrow_left_rounded,
+                tooltip: 'Chương trước',
+                enabled: hasPrev,
+                onPressed: () =>
+                    _goToPreviousChapter(chaptersList, currentIdx, comic),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: InkWell(
+                      onTap: chaptersList.isEmpty
+                          ? null
+                          : () => _showChapterSelectionSheet(
+                              context,
+                              chaptersList,
+                              currentIdx,
+                              comic,
+                            ),
+                      borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        height: 52,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.58),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            width: 0.8,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.25),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Text(
+                              '$currentReadablePage/$totalReadablePages',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            Container(
+                              width: 1,
+                              height: 20,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              color: Colors.white.withValues(alpha: 0.18),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Chương $currentChapterName',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(
+                              Icons.keyboard_arrow_up,
+                              color: Colors.white70,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              _buildReaderGlassCircleButton(
+                icon: Icons.keyboard_arrow_right_rounded,
+                tooltip: 'Chương sau',
+                enabled: hasNext,
+                onPressed: () =>
+                    _goToNextChapter(chaptersList, currentIdx, comic),
+              ),
+            ],
+          );
+        },
+        loading: () => const SizedBox.shrink(),
+        error: (_, __) => const SizedBox.shrink(),
+      ),
+    );
+  }
+
+  Widget _buildReaderGlassCircleButton({
+    required IconData icon,
+    required String tooltip,
+    required bool enabled,
+    required VoidCallback onPressed,
+  }) {
+    return ClipOval(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: enabled ? 0.58 : 0.34),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: enabled ? 0.14 : 0.08),
+              width: 0.8,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: IconButton(
+            padding: EdgeInsets.zero,
+            tooltip: tooltip,
+            onPressed: enabled ? onPressed : null,
+            icon: Icon(
+              icon,
+              color: enabled ? Colors.white : Colors.white30,
+              size: 28,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ignore: unused_element
   Widget _buildBottomControls(
     BuildContext context,
     ReaderSettings settings,

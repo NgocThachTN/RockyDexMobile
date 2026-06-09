@@ -1,3 +1,10 @@
+Cập nhật v1.2.2:
+- Nâng cấp phiên bản lên v1.2.2+25.
+- Thêm thông báo cập nhật tự động: app tự kiểm tra GitHub Releases khi mở/resume và định kỳ khi đang chạy.
+- Bổ sung tùy chọn bật/tắt "Thông báo cập nhật tự động" trong Cài đặt.
+- Thêm native Android notification để báo khi có APK mới, giảm phụ thuộc vào thao tác kiểm tra thủ công.
+- Sửa logic chuyển chương trong trình đọc và làm gọn bottom bar với nút chương trước/sau dạng liquid glass riêng, hiển thị trang dạng 12/21.
+
 Cập nhật v1.2.1:
 - Nâng cấp phiên bản lên v1.2.1+24 để phát hành OTA qua GitHub Releases.
 - Tối ưu trình đọc truyện: hỗ trợ overscroll để chuyển về chương trước/chương sau mượt hơn.
