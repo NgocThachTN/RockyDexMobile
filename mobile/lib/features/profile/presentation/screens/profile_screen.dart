@@ -455,7 +455,7 @@ class ProfileScreen extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Text(
-            'Phiên bản: 1.2.5',
+            'Phiên bản: 1.2.6',
             style: TextStyle(
               color: Colors.grey,
               fontSize: 12,

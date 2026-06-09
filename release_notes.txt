@@ -1,3 +1,8 @@
+Cập nhật v1.2.6:
+- Nâng cấp phiên bản lên v1.2.6+28.
+- Sửa chuyển chương trong chế độ đọc ngang: vuốt ngược qua trang đầu sẽ chuyển về chương trước nếu còn chương trước.
+- Đồng bộ lại số trang thật để vuốt qua trang đầu/cuối chuyển chương ổn định hơn.
+
 Cập nhật v1.2.5:
 - Nâng cấp phiên bản lên v1.2.5+27.
 - Sửa chuyển chương trong chế độ đọc ngang: vuốt qua trang cuối sẽ chuyển ngay sang chương tiếp theo nếu còn chương sau.

@@ -52,7 +52,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    _pageController = PageController();
+    _pageController = PageController(initialPage: 1);
 
     // Enter fullscreen mode
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -251,9 +251,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             child: chapterAsync.when(
               data: (chapter) {
                 final pages = chapter.item.chapterImage;
-                _totalPages = settings.layout == 'horizontal'
-                    ? pages.length + 1
-                    : pages.length;
+                _totalPages = pages.isEmpty ? 1 : pages.length;
 
                 final cdn = chapter.domainCdn;
                 final path = chapter.item.chapterPath;
@@ -286,7 +284,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           _currentPage = savedPage;
                         });
                         if (settings.layout == 'horizontal') {
-                          _pageController.jumpToPage(savedPage - 1);
+                          _pageController.jumpToPage(savedPage);
                         } else {
                           if (_scrollController.hasClients) {
                             final maxScroll =
@@ -494,6 +492,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     required int currentIdx,
     required ComicDetailInfoModel? comicDetail,
   }) {
+    if (urls.isEmpty) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.primaryBlue),
+      );
+    }
+
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification notification) {
         if (notification is OverscrollNotification && comicDetail != null) {
@@ -516,28 +520,48 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         ),
         pageController: _pageController,
         builder: (BuildContext context, int index) {
-          if (index == urls.length) {
+          if (index == 0) {
             return PhotoViewGalleryPageOptions.customChild(
-              child: _buildEndOfChapterPage(
+              child: _buildChapterTurnPage(
                 context: context,
-                hasNext: hasNext,
-                chaptersList: chaptersList,
-                currentIdx: currentIdx,
-                comicDetail: comicDetail,
-                isHorizontal: true,
+                message: hasPrev
+                    ? 'Đang mở chương trước...'
+                    : 'Đây là trang đầu',
               ),
               initialScale: PhotoViewComputedScale.contained,
               minScale: PhotoViewComputedScale.contained,
             );
           }
+
+          if (index == urls.length + 1) {
+            return PhotoViewGalleryPageOptions.customChild(
+              child: hasNext
+                  ? _buildChapterTurnPage(
+                      context: context,
+                      message: 'Đang mở chương sau...',
+                    )
+                  : _buildEndOfChapterPage(
+                      context: context,
+                      hasNext: hasNext,
+                      chaptersList: chaptersList,
+                      currentIdx: currentIdx,
+                      comicDetail: comicDetail,
+                      isHorizontal: true,
+                    ),
+              initialScale: PhotoViewComputedScale.contained,
+              minScale: PhotoViewComputedScale.contained,
+            );
+          }
+
+          final imageIndex = index - 1;
           return PhotoViewGalleryPageOptions(
-            imageProvider: CachedNetworkImageProvider(urls[index]),
+            imageProvider: CachedNetworkImageProvider(urls[imageIndex]),
             initialScale: PhotoViewComputedScale.contained,
             minScale: PhotoViewComputedScale.contained,
             maxScale: PhotoViewComputedScale.covered * 2.5,
           );
         },
-        itemCount: urls.length + 1,
+        itemCount: urls.length + 2,
         loadingBuilder: (context, event) => const Center(
           child: CircularProgressIndicator(
             strokeWidth: 2,
@@ -545,27 +569,61 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           ),
         ),
         onPageChanged: (index) {
-          if (index >= urls.length) {
-            _saveReadingProgress(100, urls.length);
-            if (hasNext && comicDetail != null) {
-              _goToNextChapter(chaptersList, currentIdx, comicDetail);
+          if (index == 0) {
+            if (hasPrev && comicDetail != null) {
+              _saveReadingProgress(0, 1);
+              _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
             } else {
-              setState(() {
-                _currentPage = _totalPages;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (_pageController.hasClients) {
+                  _pageController.jumpToPage(1);
+                }
               });
             }
             return;
           }
 
+          if (index == urls.length + 1) {
+            _saveReadingProgress(100, urls.length);
+            if (hasNext && comicDetail != null) {
+              _goToNextChapter(chaptersList, currentIdx, comicDetail);
+            } else {
+              setState(() {
+                _currentPage = urls.length;
+              });
+            }
+            return;
+          }
+
+          final actualPage = index.clamp(1, urls.length).toInt();
           setState(() {
-            _currentPage = index + 1;
+            _currentPage = actualPage;
           });
-          final actualPage = (index + 1).clamp(1, urls.length);
           _saveReadingProgress(
             (actualPage / urls.length * 100).toInt(),
             actualPage,
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildChapterTurnPage({
+    required BuildContext context,
+    required String message,
+  }) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      color: Colors.black,
+      alignment: Alignment.center,
+      child: Text(
+        message,
+        style: TextStyle(
+          color: Colors.white.withValues(alpha: 0.72),
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -1330,9 +1388,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     AsyncValue<ComicDetailInfoModel> comicDetailAsync,
   ) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final totalReadablePages = settings.layout == 'horizontal'
-        ? (_totalPages - 1).clamp(1, _totalPages)
-        : _totalPages;
+    final totalReadablePages = _totalPages < 1 ? 1 : _totalPages;
     final currentReadablePage = _currentPage.clamp(1, totalReadablePages);
 
     return Positioned(

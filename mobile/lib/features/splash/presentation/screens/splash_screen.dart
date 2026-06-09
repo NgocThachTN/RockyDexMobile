@@ -212,7 +212,7 @@ class _SplashScreenState extends State<SplashScreen>
                   child: FadeTransition(
                     opacity: _subtitleOpacity,
                     child: Text(
-                      'v1.2.5',
+                      'v1.2.6',
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark
