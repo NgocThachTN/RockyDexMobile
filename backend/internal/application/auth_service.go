@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
-	"strings"
 	"time"
 
 	"rockydex-api/internal/application/dto"
