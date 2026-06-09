@@ -269,6 +269,7 @@ class ComicRepository {
     required String chapterSlug,
     required String chapterName,
     required int progressPercent,
+    required int pageNumber,
   }) async {
     await LocalStorage.saveHistory({
       'comic_slug': comicSlug,
@@ -277,6 +278,7 @@ class ComicRepository {
       'chapter_slug': chapterSlug,
       'chapter_name': chapterName,
       'progress_percent': progressPercent,
+      'page_number': pageNumber,
       'last_read_at': DateTime.now().toIso8601String(),
     });
     await _ref.read(libraryRepositoryProvider).saveHistoryRemote(
@@ -286,6 +288,7 @@ class ComicRepository {
       chapterSlug: chapterSlug,
       chapterName: chapterName,
       progressPercent: progressPercent,
+      pageNumber: pageNumber,
     );
   }
 

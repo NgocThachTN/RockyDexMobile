@@ -172,42 +172,50 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
-                      // App Title
-                      FadeTransition(
-                        opacity: _titleOpacity,
-                        child: SlideTransition(
-                          position: _titleSlide,
-                          child: Text(
-                            'RockyDex',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
-                              letterSpacing: 1.5,
-                              shadows: [
-                                Shadow(
-                                  color: primaryColor.withOpacity(0.2),
-                                  offset: const Offset(0, 2),
-                                  blurRadius: 4,
+                      // App Title & Subtitle pulled closer to the logo
+                      Transform.translate(
+                        offset: const Offset(0, -35),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // App Title
+                            FadeTransition(
+                              opacity: _titleOpacity,
+                              child: SlideTransition(
+                                position: _titleSlide,
+                                child: Text(
+                                  'RockyDex',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
+                                    letterSpacing: 1.5,
+                                    shadows: [
+                                      Shadow(
+                                        color: primaryColor.withOpacity(0.2),
+                                        offset: const Offset(0, 2),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      // Subtitle
-                      FadeTransition(
-                        opacity: _subtitleOpacity,
-                        child: Text(
-                          'Thế giới Manga trong tầm tay',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
-                            fontStyle: FontStyle.italic,
-                            letterSpacing: 0.5,
-                          ),
+                            const SizedBox(height: 6),
+                            // Subtitle
+                            FadeTransition(
+                              opacity: _subtitleOpacity,
+                              child: Text(
+                                'Thế giới Manga trong tầm tay',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? AppColors.textDarkSecondary : AppColors.textLightSecondary,
+                                  fontStyle: FontStyle.italic,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

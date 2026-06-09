@@ -5,20 +5,7 @@ import '../../../../core/constants/colors.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../../../auth/presentation/auth_notifier.dart';
 import '../../../../core/services/update_service.dart';
-
-final readingStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final favorites = await LocalStorage.getFavorites();
-  final history = await LocalStorage.getHistoryList();
-  
-  final uniqueComicsRead = history.map((e) => e['comic_slug']).toSet().length;
-  final totalChaptersRead = history.length;
-
-  return {
-    'total_comics_read': uniqueComicsRead,
-    'total_favorites': favorites.length,
-    'chapters_read': totalChaptersRead,
-  };
-});
+import '../../../library/data/library_repository.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -45,52 +32,11 @@ class ProfileScreen extends ConsumerWidget {
 
     if (confirm == true) {
       await ref.read(authProvider.notifier).logout();
-      ref.invalidate(readingStatsProvider);
     }
-  }
-
-  void _showStatsBottomSheet(BuildContext context, AsyncValue<Map<String, dynamic>> statsAsync) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Thống kê đọc truyện',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isDark ? AppColors.textDarkPrimary : AppColors.textLightPrimary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                _buildStatsGrid(context, statsAsync),
-                const SizedBox(height: 20),
-              ],
-            ),
-          ),
-        );
-      },
-    );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final statsAsync = ref.watch(readingStatsProvider);
     final authState = ref.watch(authProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -132,7 +78,12 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.refresh(readingStatsProvider.future),
+        onRefresh: () async {
+          try {
+            await ref.read(libraryRepositoryProvider).syncFavorites();
+            await ref.read(libraryRepositoryProvider).syncHistory();
+          } catch (_) {}
+        },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -175,7 +126,7 @@ class ProfileScreen extends ConsumerWidget {
                       context: context,
                       icon: Icons.bar_chart_rounded,
                       title: 'Thống kê',
-                      onTap: () => _showStatsBottomSheet(context, statsAsync),
+                      onTap: () => context.push('/stats'),
                     ),
                     _buildMenuItem(
                       context: context,
@@ -451,61 +402,4 @@ class ProfileScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatsGrid(BuildContext context, AsyncValue<Map<String, dynamic>> asyncStats) {
-    return asyncStats.when(
-      data: (stats) {
-        final comicsRead = stats['total_comics_read'] ?? 0;
-        final favoritesCount = stats['total_favorites'] ?? 0;
-        final chaptersRead = stats['chapters_read'] ?? 0;
-
-        return Row(
-          children: [
-            Expanded(child: _buildStatCard(context, 'Đã đọc', '$comicsRead', 'bộ truyện')),
-            const SizedBox(width: 8),
-            Expanded(child: _buildStatCard(context, 'Yêu thích', '$favoritesCount', 'bộ truyện')),
-            const SizedBox(width: 8),
-            Expanded(child: _buildStatCard(context, 'Chương', '$chaptersRead', 'đã đọc')),
-          ],
-        );
-      },
-      loading: () => const SizedBox(
-        height: 60,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue)),
-      ),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
-
-  Widget _buildStatCard(BuildContext context, String title, String value, String unit) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Text(
-            title,
-            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryBlue),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            unit,
-            style: const TextStyle(fontSize: 9, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
 }

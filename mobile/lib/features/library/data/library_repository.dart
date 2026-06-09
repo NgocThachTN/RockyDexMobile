@@ -105,6 +105,7 @@ class LibraryRepository {
           'chapter_slug': item['chapter_slug'],
           'chapter_name': item['chapter_name'],
           'progress_percent': item['progress_percent'],
+          'page_number': item['page_number'] ?? 1,
           'last_read_at': item['last_read_at'] ?? DateTime.now().toIso8601String(),
         });
       }
@@ -121,6 +122,7 @@ class LibraryRepository {
             chapterSlug: localItem['chapter_slug'] ?? '',
             chapterName: localItem['chapter_name'] ?? '',
             progressPercent: localItem['progress_percent'] ?? 0,
+            pageNumber: localItem['page_number'] ?? 1,
           );
         }
       }
@@ -136,6 +138,7 @@ class LibraryRepository {
     required String chapterSlug,
     required String chapterName,
     required int progressPercent,
+    required int pageNumber,
   }) async {
     if (!_isLoggedIn) return;
     try {
@@ -146,6 +149,7 @@ class LibraryRepository {
         'chapter_slug': chapterSlug,
         'chapter_name': chapterName,
         'progress_percent': progressPercent,
+        'page_number': pageNumber,
       });
     } catch (_) {}
   }

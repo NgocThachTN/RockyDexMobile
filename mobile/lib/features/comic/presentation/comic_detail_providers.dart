@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/comic_repository.dart';
 import '../domain/comic_detail_model.dart';
+import '../../library/presentation/library_providers.dart';
 
 final comicDetailProvider = FutureProvider.family<ComicDetailInfoModel, String>((ref, slug) async {
   final repo = ref.watch(comicRepositoryProvider);
@@ -30,14 +31,15 @@ class FavoriteState {
 
 final favoriteNotifierProvider = StateNotifierProvider.family<FavoriteNotifier, FavoriteState, String>((ref, slug) {
   final repo = ref.watch(comicRepositoryProvider);
-  return FavoriteNotifier(repo, slug);
+  return FavoriteNotifier(repo, slug, ref);
 });
 
 class FavoriteNotifier extends StateNotifier<FavoriteState> {
   final ComicRepository _repository;
   final String _slug;
+  final Ref _ref;
 
-  FavoriteNotifier(this._repository, this._slug) : super(FavoriteState(isFav: false)) {
+  FavoriteNotifier(this._repository, this._slug, this._ref) : super(FavoriteState(isFav: false)) {
     _checkStatus();
   }
 
@@ -51,6 +53,11 @@ class FavoriteNotifier extends StateNotifier<FavoriteState> {
     final nextStatus = !state.isFav;
     state = state.copyWith(isLoading: true);
     await _repository.toggleFavorite(comic, nextStatus);
+    
+    // Invalidate providers to force library (favorites & history) screens to sync/rebuild in real-time
+    _ref.invalidate(libraryFavoritesProvider);
+    _ref.invalidate(libraryHistoryProvider);
+    
     state = FavoriteState(isFav: nextStatus, isLoading: false);
   }
 }

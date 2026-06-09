@@ -16,8 +16,9 @@ class LocalStorage {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
   }
 
@@ -43,9 +44,16 @@ class LocalStorage {
         chapter_slug TEXT,
         chapter_name TEXT,
         progress_percent INTEGER,
+        page_number INTEGER DEFAULT 1,
         last_read_at TEXT
       )
     ''');
+  }
+
+  static Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE local_histories ADD COLUMN page_number INTEGER DEFAULT 1');
+    }
   }
 
   // Favorites Helpers

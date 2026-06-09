@@ -14,6 +14,7 @@ import '../../features/library/presentation/screens/favorites_screen.dart';
 import '../../features/library/presentation/screens/history_screen.dart';
 import '../../features/library/presentation/screens/storage_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/profile/presentation/screens/stats_screen.dart';
 import '../../features/comic/presentation/screens/comic_detail_screen.dart';
 import '../../features/reader/presentation/screens/reader_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
@@ -139,6 +140,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/settings',
         parentNavigatorKey: rootNavigatorKey,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/stats',
+        parentNavigatorKey: rootNavigatorKey,
+        builder: (context, state) => const StatsScreen(),
       ),
       GoRoute(
         path: '/update',

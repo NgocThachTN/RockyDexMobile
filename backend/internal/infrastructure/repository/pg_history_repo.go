@@ -25,6 +25,7 @@ func (r *PgHistoryRepository) Save(hist *domain.History) error {
 		existing.ChapterSlug = hist.ChapterSlug
 		existing.ChapterName = hist.ChapterName
 		existing.ProgressPercent = hist.ProgressPercent
+		existing.PageNumber = hist.PageNumber
 		existing.LastReadAt = time.Now()
 		return r.db.Save(&existing).Error
 	}

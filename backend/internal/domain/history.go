@@ -14,6 +14,7 @@ type History struct {
 	ChapterSlug     string    `json:"chapter_slug" gorm:"not null"`
 	ChapterName     string    `json:"chapter_name" gorm:"not null"`
 	ProgressPercent int       `json:"progress_percent" gorm:"default:0"` // 0 to 100
+	PageNumber      int       `json:"page_number" gorm:"default:1"`      // 1-based index of the page
 	LastReadAt      time.Time `json:"last_read_at"`
 }
 

@@ -76,51 +76,37 @@ class _StorageScreenState extends ConsumerState<StorageScreen> with SingleTicker
         titleSpacing: 0,
         title: Align(
           alignment: Alignment.centerLeft,
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            dividerColor: Colors.transparent,
-            indicatorColor: AppColors.primaryBlue,
-            indicatorSize: TabBarIndicatorSize.label,
-            labelColor: isDark ? Colors.white : Colors.black,
-            unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
-            tabs: const [
-              Tab(text: 'Yêu thích'),
-              Tab(text: 'Lịch sử'),
-            ],
+          child: SizedBox(
+            width: 220,
+            child: TabBar(
+              controller: _tabController,
+              isScrollable: false,
+              dividerColor: Colors.transparent,
+              indicatorColor: AppColors.primaryBlue,
+              indicatorSize: TabBarIndicatorSize.label,
+              labelColor: isDark ? Colors.white : Colors.black,
+              unselectedLabelColor: isDark ? Colors.white60 : Colors.black54,
+              labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 16),
+              tabs: const [
+                Tab(text: 'Yêu thích'),
+                Tab(text: 'Lịch sử'),
+              ],
+            ),
           ),
         ),
         actions: [
+          if (_tabController.index == 1)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_outlined),
+              tooltip: 'Xóa lịch sử',
+              onPressed: () => _handleClearHistory(context),
+            ),
           IconButton(
             icon: const Icon(Icons.search_rounded),
             tooltip: 'Tìm kiếm',
             onPressed: () => context.push('/search'),
           ),
-          if (_tabController.index == 1)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded),
-              tooltip: 'Thêm',
-              onSelected: (value) {
-                if (value == 'clear_history') {
-                  _handleClearHistory(context);
-                }
-              },
-              itemBuilder: (BuildContext context) => [
-                const PopupMenuItem<String>(
-                  value: 'clear_history',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete_sweep_outlined, color: AppColors.error, size: 20),
-                      SizedBox(width: 8),
-                      Text('Xóa toàn bộ lịch sử', style: TextStyle(fontSize: 14)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
         ],
       ),
       body: TabBarView(

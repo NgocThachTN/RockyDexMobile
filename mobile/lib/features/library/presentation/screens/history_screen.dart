@@ -151,9 +151,21 @@ class HistoryContent extends ConsumerWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.play_circle_outline, color: AppColors.primaryBlue, size: 28),
+                              icon: const Icon(Icons.auto_stories_outlined, color: AppColors.primaryBlue, size: 26),
                               onPressed: () {
-                                context.push('/comic/$slug');
+                                final chapterSlug = item['chapter_slug'] as String? ?? '';
+                                if (chapterSlug.isNotEmpty) {
+                                  context.push(
+                                    '/reader/$slug/$chapterSlug',
+                                    extra: {
+                                      'comic_name': name,
+                                      'comic_thumb': thumb,
+                                      'chapter_name': chapName,
+                                    },
+                                  );
+                                } else {
+                                  context.push('/comic/$slug');
+                                }
                               },
                               tooltip: 'Đọc tiếp',
                             ),

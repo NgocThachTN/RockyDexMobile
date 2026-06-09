@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,6 +44,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   late final ScrollController _scrollController;
   late final PageController _pageController;
   bool _imagesPrecached = false;
+  bool _isChangingChapter = false;
+  String? _resolvedApiDataUrl;
+  bool _initialPageJumped = false;
 
   @override
   void initState() {
@@ -81,7 +85,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         }
 
         // Throttle/Save progress periodically
-        _saveReadingProgress(progress);
+        _saveReadingProgress(progress, page);
       }
     }
   }
@@ -102,7 +106,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     }
   }
 
-  void _saveReadingProgress(int progressPercent) {
+  void _saveReadingProgress(int progressPercent, int pageNumber) {
     final apiDataUrl = widget.apiDataUrl ?? '';
     final chapterState = ref.read(readerChapterDetailProvider(apiDataUrl));
     final comicDetailState = ref.read(comicDetailProvider(widget.comicSlug));
@@ -156,6 +160,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           chapterSlug: widget.chapterSlug,
           chapterName: chapterName,
           progressPercent: progressPercent,
+          pageNumber: pageNumber,
         );
     
     // Invalidate libraryHistoryProvider to refresh the history list
@@ -172,10 +177,51 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   Widget build(BuildContext context) {
     // If apiDataUrl is missing, we fetch it by fallback.
     // However, it is always passed from details screen through GoRouter extra.
-    final apiDataUrl = widget.apiDataUrl ?? '';
-    final chapterAsync = ref.watch(readerChapterDetailProvider(apiDataUrl));
+    final initialApiDataUrl = widget.apiDataUrl ?? _resolvedApiDataUrl ?? '';
+    final chapterAsync = initialApiDataUrl.isNotEmpty
+        ? ref.watch(readerChapterDetailProvider(initialApiDataUrl))
+        : const AsyncValue<ChapterDetailInfoModel>.loading();
     final settings = ref.watch(readerSettingsProvider);
     final comicDetailAsync = ref.watch(comicDetailProvider(widget.comicSlug));
+
+    List<ChapterModel> chaptersList = [];
+    int currentIdx = -1;
+    bool hasNext = false;
+    bool hasPrev = false;
+    ComicDetailInfoModel? comicDetail;
+
+    if (comicDetailAsync.hasValue) {
+      comicDetail = comicDetailAsync.value!;
+      ServerModel? matchedServer;
+      for (final srv in comicDetail.chapters) {
+        if (srv.serverData.any((c) => c.chapterSlug == widget.chapterSlug)) {
+          matchedServer = srv;
+          break;
+        }
+      }
+      final server = matchedServer ?? (comicDetail.chapters.isNotEmpty ? comicDetail.chapters.first : null);
+      if (server != null) {
+        chaptersList = server.serverData;
+        currentIdx = chaptersList.indexWhere((c) => c.chapterSlug == widget.chapterSlug);
+        hasPrev = currentIdx != -1 && currentIdx < chaptersList.length - 1;
+        hasNext = currentIdx > 0;
+
+        // Resolve apiDataUrl if it was empty and chapter was found in chapters list
+        if (initialApiDataUrl.isEmpty && currentIdx != -1) {
+          final matchedChapter = chaptersList[currentIdx];
+          if (matchedChapter.chapterApiData.isNotEmpty) {
+            final resolvedUrl = matchedChapter.chapterApiData;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _resolvedApiDataUrl != resolvedUrl) {
+                setState(() {
+                  _resolvedApiDataUrl = resolvedUrl;
+                });
+              }
+            });
+          }
+        }
+      }
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -187,7 +233,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             child: chapterAsync.when(
               data: (chapter) {
                 final pages = chapter.item.chapterImage;
-                _totalPages = pages.length;
+                _totalPages = settings.layout == 'horizontal' ? pages.length + 1 : pages.length;
 
                 final cdn = chapter.domainCdn;
                 final path = chapter.item.chapterPath;
@@ -203,10 +249,47 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                   });
                 }
 
+                // Restore last read page if not done yet
+                if (!_initialPageJumped) {
+                  _initialPageJumped = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) async {
+                    final hist = await ref.read(comicRepositoryProvider).getReadingHistory(widget.comicSlug);
+                    if (hist != null && hist['chapter_slug'] == widget.chapterSlug) {
+                      final savedPage = hist['page_number'] as int? ?? 1;
+                      if (savedPage > 1 && savedPage <= _totalPages) {
+                        setState(() {
+                          _currentPage = savedPage;
+                        });
+                        if (settings.layout == 'horizontal') {
+                          _pageController.jumpToPage(savedPage - 1);
+                        } else {
+                          if (_scrollController.hasClients) {
+                            final maxScroll = _scrollController.position.maxScrollExtent;
+                            final targetOffset = (savedPage - 1) / (_totalPages - 1) * maxScroll;
+                            _scrollController.jumpTo(targetOffset);
+                          }
+                        }
+                      }
+                    }
+                  });
+                }
+
                 if (settings.layout == 'horizontal') {
-                  return _buildHorizontalGallery(imageUrls);
+                  return _buildHorizontalGallery(
+                    urls: imageUrls,
+                    hasNext: hasNext,
+                    chaptersList: chaptersList,
+                    currentIdx: currentIdx,
+                    comicDetail: comicDetail,
+                  );
                 } else {
-                  return _buildVerticalScroll(imageUrls);
+                  return _buildVerticalScroll(
+                    urls: imageUrls,
+                    hasNext: hasNext,
+                    chaptersList: chaptersList,
+                    currentIdx: currentIdx,
+                    comicDetail: comicDetail,
+                  );
                 }
               },
               loading: () => const Center(
@@ -219,7 +302,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     Text('Lỗi tải chương: $err', style: const TextStyle(color: Colors.white)),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () => ref.invalidate(readerChapterDetailProvider(apiDataUrl)),
+                      onPressed: () => ref.invalidate(readerChapterDetailProvider(initialApiDataUrl)),
                       child: const Text('Thử lại'),
                     )
                   ],
@@ -230,7 +313,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
           // 1.5. Transparent Tap Areas for Horizontal Navigation
           if (settings.layout == 'horizontal' && chapterAsync.hasValue)
-            ..._buildHorizontalTapOverlay(context),
+            ..._buildHorizontalTapOverlay(
+              context: context,
+              hasNext: hasNext,
+              chaptersList: chaptersList,
+              currentIdx: currentIdx,
+              comicDetail: comicDetail,
+            ),
 
           // 2. Brightness Overlay
           IgnorePointer(
@@ -249,7 +338,13 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
-  List<Widget> _buildHorizontalTapOverlay(BuildContext context) {
+  List<Widget> _buildHorizontalTapOverlay({
+    required BuildContext context,
+    required bool hasNext,
+    required List<ChapterModel> chaptersList,
+    required int currentIdx,
+    required ComicDetailInfoModel? comicDetail,
+  }) {
     final width = MediaQuery.of(context).size.width;
     return [
       // Left tap area (25%)
@@ -284,6 +379,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
               );
+            } else if (_currentPage == _totalPages && hasNext && !_isChangingChapter && comicDetail != null) {
+              setState(() {
+                _isChangingChapter = true;
+              });
+              _changeChapter(chaptersList[currentIdx - 1], comicDetail);
             }
           },
         ),
@@ -302,41 +402,331 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     ];
   }
 
-  Widget _buildVerticalScroll(List<String> urls) {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      itemCount: urls.length,
-      cacheExtent: 3000, // Preload images 3000px ahead/behind to prevent loading blank screens
-      itemBuilder: (context, index) {
-        return _VerticalPageItem(imageUrl: urls[index]);
+  Widget _buildVerticalScroll({
+    required List<String> urls,
+    required bool hasNext,
+    required List<ChapterModel> chaptersList,
+    required int currentIdx,
+    required ComicDetailInfoModel? comicDetail,
+  }) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification notification) {
+        if (notification is UserScrollNotification &&
+            notification.direction == ScrollDirection.idle) {
+          final metrics = notification.metrics;
+          if (metrics.pixels >= metrics.maxScrollExtent + 60 &&
+              hasNext &&
+              !_isChangingChapter &&
+              comicDetail != null) {
+            setState(() {
+              _isChangingChapter = true;
+            });
+            _changeChapter(chaptersList[currentIdx - 1], comicDetail);
+          }
+        }
+        return false;
       },
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: EdgeInsets.zero,
+        itemCount: urls.length + 1,
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        cacheExtent: 3000, // Preload images 3000px ahead/behind to prevent loading blank screens
+        itemBuilder: (context, index) {
+          if (index == urls.length) {
+            return _buildEndOfChapterPage(
+              context: context,
+              hasNext: hasNext,
+              chaptersList: chaptersList,
+              currentIdx: currentIdx,
+              comicDetail: comicDetail,
+              isHorizontal: false,
+            );
+          }
+          return _VerticalPageItem(imageUrl: urls[index]);
+        },
+      ),
     );
   }
 
 
-  Widget _buildHorizontalGallery(List<String> urls) {
-    return PhotoViewGallery.builder(
-      scrollPhysics: const BouncingScrollPhysics(),
-      pageController: _pageController,
-      builder: (BuildContext context, int index) {
-        return PhotoViewGalleryPageOptions(
-          imageProvider: CachedNetworkImageProvider(urls[index]),
-          initialScale: PhotoViewComputedScale.contained,
-          minScale: PhotoViewComputedScale.contained,
-          maxScale: PhotoViewComputedScale.covered * 2.5,
-        );
+  Widget _buildHorizontalGallery({
+    required List<String> urls,
+    required bool hasNext,
+    required List<ChapterModel> chaptersList,
+    required int currentIdx,
+    required ComicDetailInfoModel? comicDetail,
+  }) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification notification) {
+        if (notification is UserScrollNotification &&
+            notification.direction == ScrollDirection.idle) {
+          final metrics = notification.metrics;
+          if (_currentPage == _totalPages &&
+              metrics.pixels >= metrics.maxScrollExtent + 40 &&
+              hasNext &&
+              !_isChangingChapter &&
+              comicDetail != null) {
+            setState(() {
+              _isChangingChapter = true;
+            });
+            _changeChapter(chaptersList[currentIdx - 1], comicDetail);
+          }
+        }
+        return false;
       },
-      itemCount: urls.length,
-      loadingBuilder: (context, event) => const Center(
-        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+      child: PhotoViewGallery.builder(
+        scrollPhysics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        pageController: _pageController,
+        builder: (BuildContext context, int index) {
+          if (index == urls.length) {
+            return PhotoViewGalleryPageOptions.customChild(
+              child: _buildEndOfChapterPage(
+                context: context,
+                hasNext: hasNext,
+                chaptersList: chaptersList,
+                currentIdx: currentIdx,
+                comicDetail: comicDetail,
+                isHorizontal: true,
+              ),
+              initialScale: PhotoViewComputedScale.contained,
+              minScale: PhotoViewComputedScale.contained,
+            );
+          }
+          return PhotoViewGalleryPageOptions(
+            imageProvider: CachedNetworkImageProvider(urls[index]),
+            initialScale: PhotoViewComputedScale.contained,
+            minScale: PhotoViewComputedScale.contained,
+            maxScale: PhotoViewComputedScale.covered * 2.5,
+          );
+        },
+        itemCount: urls.length + 1,
+        loadingBuilder: (context, event) => const Center(
+          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryBlue),
+        ),
+        onPageChanged: (index) {
+          setState(() {
+            _currentPage = index + 1;
+          });
+          final actualPage = (index + 1).clamp(1, urls.length);
+          _saveReadingProgress((actualPage / urls.length * 100).toInt(), actualPage);
+        },
       ),
-      onPageChanged: (index) {
-        setState(() {
-          _currentPage = index + 1;
-        });
-        _saveReadingProgress((_currentPage / _totalPages * 100).toInt());
-      },
+    );
+  }
+
+  Widget _buildEndOfChapterPage({
+    required BuildContext context,
+    required bool hasNext,
+    required List<ChapterModel> chaptersList,
+    required int currentIdx,
+    required ComicDetailInfoModel? comicDetail,
+    required bool isHorizontal,
+  }) {
+    final currentChapterName = currentIdx != -1 && currentIdx < chaptersList.length
+        ? chaptersList[currentIdx].chapterName
+        : widget.chapterSlug.replaceAll('chap-', '');
+
+    final nextChapter = hasNext ? chaptersList[currentIdx - 1] : null;
+
+    return Container(
+      width: double.infinity,
+      height: isHorizontal ? double.infinity : 320,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.85),
+        borderRadius: isHorizontal ? null : const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Badge "Đã đọc xong"
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryBlue.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.primaryBlue.withOpacity(0.3), width: 1),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.check_circle_outline, color: AppColors.primaryBlue, size: 16),
+                    SizedBox(width: 6),
+                    Text(
+                      'ĐÃ ĐỌC XONG',
+                      style: TextStyle(
+                        color: AppColors.primaryBlue,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Tên chương hiện tại
+              Text(
+                'Chương $currentChapterName',
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Dấu phân cách nhỏ
+              Container(
+                width: 40,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(1),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              if (hasNext && nextChapter != null && comicDetail != null) ...[
+                // Tiêu đề chương tiếp theo
+                const Text(
+                  'CHƯƠNG TIẾP THEO',
+                  style: TextStyle(
+                    color: Colors.white38,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Chương ${nextChapter.chapterName}${nextChapter.chapterTitle.isNotEmpty ? ": ${nextChapter.chapterTitle}" : ""}',
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                // Nút CTA đọc tiếp chương sau
+                ElevatedButton(
+                  onPressed: () {
+                    if (!_isChangingChapter) {
+                      setState(() {
+                        _isChangingChapter = true;
+                      });
+                      _changeChapter(nextChapter, comicDetail);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Đọc Chương Tiếp Theo',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(Icons.arrow_forward_rounded, size: 16),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Hướng dẫn vuốt/cuộn
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isHorizontal ? Icons.swap_horiz_rounded : Icons.swap_vert_rounded,
+                      color: Colors.white38,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isHorizontal
+                          ? 'Vuốt tiếp sang trái để chuyển chương'
+                          : 'Cuộn tiếp xuống dưới để chuyển chương',
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 12,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                // Đã hết chương mới nhất
+                const Text(
+                  'Bạn đã đọc hết chương mới nhất rồi!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        context.pop(); // Quay lại trang chi tiết truyện
+                      },
+                      icon: const Icon(Icons.info_outline, size: 16),
+                      label: const Text('Chi tiết truyện'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                        side: const BorderSide(color: Colors.white30),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // Quay lại trang chủ
+                        context.go('/home');
+                      },
+                      icon: const Icon(Icons.home_outlined, size: 16),
+                      label: const Text('Trang chủ'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white24,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -699,7 +1089,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     child: Row(
                       children: [
                         Text(
-                          '$_currentPage',
+                          (settings.layout == 'horizontal' && _currentPage == _totalPages) ? 'Hết' : '$_currentPage',
                           style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                         Expanded(
@@ -735,7 +1125,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           ),
                         ),
                         Text(
-                          '$_totalPages',
+                          (settings.layout == 'horizontal') ? '${_totalPages - 1}' : '$_totalPages',
                           style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                       ],
