@@ -545,6 +545,18 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
           ),
         ),
         onPageChanged: (index) {
+          if (index >= urls.length) {
+            _saveReadingProgress(100, urls.length);
+            if (hasNext && comicDetail != null) {
+              _goToNextChapter(chaptersList, currentIdx, comicDetail);
+            } else {
+              setState(() {
+                _currentPage = _totalPages;
+              });
+            }
+            return;
+          }
+
           setState(() {
             _currentPage = index + 1;
           });

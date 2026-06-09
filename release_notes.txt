@@ -1,3 +1,8 @@
+Cập nhật v1.2.5:
+- Nâng cấp phiên bản lên v1.2.5+27.
+- Sửa chuyển chương trong chế độ đọc ngang: vuốt qua trang cuối sẽ chuyển ngay sang chương tiếp theo nếu còn chương sau.
+- Giữ nút chuyển chương và logic overscroll dùng chung helper để tránh kẹt trạng thái khi đổi chương.
+
 Cập nhật v1.2.4:
 - Nâng cấp phiên bản lên v1.2.4+26.
 - Thu gọn bottom bar trong trình đọc truyện để cân xứng với header bar.

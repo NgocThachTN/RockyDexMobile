@@ -61,3 +61,23 @@ jobs:
           files: mobile/build/app/outputs/flutter-apk/rockydex-v${{ steps.version.outputs.APP_VERSION }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 8. Optional: notify an external push service/webhook after the APK is attached.
+      # Configure UPDATE_NOTIFICATION_WEBHOOK_URL to let a backend/FCM worker push
+      # real-time update notifications to installed apps.
+      - name: Notify update webhook
+        env:
+          UPDATE_NOTIFICATION_WEBHOOK_URL: ${{ secrets.UPDATE_NOTIFICATION_WEBHOOK_URL }}
+        run: |
+          if [ -z "$UPDATE_NOTIFICATION_WEBHOOK_URL" ]; then
+            echo "UPDATE_NOTIFICATION_WEBHOOK_URL is not configured; skipping notification webhook."
+            exit 0
+          fi
+
+          curl -X POST "$UPDATE_NOTIFICATION_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "version": "v${{ steps.version.outputs.APP_VERSION }}",
+              "release_url": "${{ github.event.release.html_url }}",
+              "asset_name": "rockydex-v${{ steps.version.outputs.APP_VERSION }}.apk"
+            }'
