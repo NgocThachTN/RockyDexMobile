@@ -1,6 +1,10 @@
 Cập nhật v1.1.8:
 - Nâng cấp phiên bản lên v1.1.8+22.
-- Thiết kế lại Kệ sách (Thư viện): Di chuyển nút "Xóa lịch sử" vào trình đơn 3 chấm dọc (PopupMenuButton) ở góc AppBar giúp tối ưu không gian hiển thị, khắc phục hoàn toàn hiện tượng nhãn TabBar bị chèn ép gây tràn chữ thành "Lịc".
+- Thiết kế lại Kệ sách (Thư viện): Tối ưu hóa không gian hiển thị, khắc phục hoàn toàn hiện tượng nhãn TabBar bị chèn ép gây tràn chữ; đổi nút Đọc tiếp từ icon Play sang icon mở sách và chuyển hướng trực tiếp vào trình đọc thay vì trang chi tiết.
+- Tái cấu trúc Trang Thống Kê: Chuyển đổi từ bottom sheet thành màn hình độc lập riêng biệt (không có bottom bar), hiển thị biểu đồ chỉ số cùng danh sách bìa truyện dạng lưới 3 cột trực quan từ Lịch sử đọc và Danh sách yêu thích.
+- Tối ưu hóa Trình đọc truyện: Bổ sung tính năng tự động tải và chuyển chương tiếp theo khi cuộn (dọc) hoặc vuốt (ngang) quá giới hạn cuối trang (overscroll) với hiệu ứng mượt mà.
+- Đồng bộ lịch sử đọc: Tích hợp đồng bộ chi tiết đến từng trang truyện (page_number) thời gian thực giữa Local SQLite và Go Backend.
+- Sửa lỗi hệ thống: Sửa triệt để các lỗi biên dịch của Trình đọc trên Flutter và sửa lỗi unused import của Go trên Render giúp triển khai backend thành công.
 
 Cập nhật v1.1.7:
 - Nâng cấp phiên bản lên v1.1.7+21.
