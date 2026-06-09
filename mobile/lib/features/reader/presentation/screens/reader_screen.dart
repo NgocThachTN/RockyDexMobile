@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -452,8 +451,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         physics: const BouncingScrollPhysics(
           parent: AlwaysScrollableScrollPhysics(),
         ),
-        cacheExtent:
-            3000, // Preload images 3000px ahead/behind to prevent loading blank screens
+        cacheExtent: 1500, // Reduced for low-end devices
         itemBuilder: (context, index) {
           if (index == urls.length) {
             return _buildEndOfChapterPage(
@@ -685,9 +683,11 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         ? chaptersList[nextChapterIndex]
         : null;
 
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Container(
       width: double.infinity,
-      height: isHorizontal ? double.infinity : 320,
+      height: isHorizontal ? double.infinity : math.min(320.0, screenHeight * 0.45),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.85),
@@ -948,124 +948,89 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       top: topInset + 10,
       left: 12,
       right: 12,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Circular Back Button
-          ClipOval(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.58),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    width: 0.8,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    Icons.arrow_back,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  onPressed: () => context.pop(),
+      child: RepaintBoundary(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Circular Back Button
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.85),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  width: 0.8,
                 ),
               ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: () => context.pop(),
+              ),
             ),
-          ),
 
-          // Compact Center Title Pill
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                  child: Container(
-                    height: 40,
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.58),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        width: 0.8,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.20),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+            // Compact Center Title Pill
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      width: 0.8,
                     ),
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
+                  ),
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
             ),
-          ),
 
-          // Circular Settings Button
-          ClipOval(
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.58),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.14),
-                    width: 0.8,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.20),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    Icons.tune_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  tooltip: 'Cài đặt trình đọc',
-                  onPressed: () => _showReaderSettingsSheet(context),
+            // Circular Settings Button
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.85),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  width: 0.8,
                 ),
               ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: const Icon(
+                  Icons.tune_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                tooltip: 'Cài đặt trình đọc',
+                onPressed: () => _showReaderSettingsSheet(context),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1320,19 +1285,26 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
   ) async {
     if (chapters.isEmpty) return;
 
+    // Ensure latest chapters are shown first for better UX on long lists
+    final bool isAscending = _isChapterListAscending(chapters);
+    final List<ChapterModel> displayChapters =
+        isAscending ? chapters.reversed.toList() : chapters;
+    final int displayCurrentIdx =
+        isAscending ? chapters.length - 1 - currentIdx : currentIdx;
+
     final mediaQuery = MediaQuery.of(context);
-    final sheetMaxHeight = mediaQuery.size.height * 0.68;
+    final sheetMaxHeight = mediaQuery.size.height * 0.75;
     final listHeight = math.max(
       0.0,
-      sheetMaxHeight - mediaQuery.padding.bottom - 58,
+      sheetMaxHeight - mediaQuery.padding.bottom - 64,
     );
     final maxScrollOffset = math.max(
       0.0,
-      chapters.length * _chapterSheetItemExtent - listHeight,
+      displayChapters.length * _chapterSheetItemExtent - listHeight,
     );
-    final initialScrollOffset = currentIdx <= 0
+    final initialScrollOffset = displayCurrentIdx <= 0
         ? 0.0
-        : (currentIdx * _chapterSheetItemExtent -
+        : (displayCurrentIdx * _chapterSheetItemExtent -
                   listHeight / 2 +
                   _chapterSheetItemExtent / 2)
               .clamp(0.0, maxScrollOffset)
@@ -1346,11 +1318,12 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       selectedChapter = await showModalBottomSheet<ChapterModel>(
         context: context,
         isScrollControlled: true,
-        backgroundColor: Colors.black.withValues(alpha: 0.95),
+        backgroundColor: Colors.black.withValues(alpha: 0.98),
+        barrierColor: Colors.black54,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
         ),
         constraints: BoxConstraints(maxHeight: sheetMaxHeight),
@@ -1360,18 +1333,15 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Danh Sách Chương (${chapters.length})',
+                        'Danh Sách Chương (${displayChapters.length})',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 17,
                           color: Colors.white,
                         ),
                       ),
@@ -1379,46 +1349,45 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                         icon: const Icon(
                           Icons.close,
                           color: Colors.white70,
-                          size: 20,
+                          size: 22,
                         ),
                         onPressed: () => Navigator.pop(sheetContext),
                       ),
                     ],
                   ),
                 ),
-                const Divider(color: Colors.white24, height: 1),
+                const Divider(color: Colors.white12, height: 1),
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     itemExtent: _chapterSheetItemExtent,
-                    cacheExtent: _chapterSheetItemExtent * 8,
+                    cacheExtent: _chapterSheetItemExtent * 12,
                     addAutomaticKeepAlives: false,
-                    addSemanticIndexes: false,
-                    itemCount: chapters.length,
+                    addRepaintBoundaries: true,
+                    itemCount: displayChapters.length,
                     itemBuilder: (context, index) {
-                      final chap = chapters[index];
-                      final isCurrent = index == currentIdx;
+                      final chap = displayChapters[index];
+                      final isCurrent = index == displayCurrentIdx;
 
                       return ListTile(
                         dense: true,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 2,
                         ),
                         tileColor: isCurrent
-                            ? AppColors.primaryBlue.withValues(alpha: 0.15)
+                            ? AppColors.primaryBlue.withValues(alpha: 0.12)
                             : null,
                         title: Text(
                           'Chương ${chap.chapterName}',
                           style: TextStyle(
                             color: isCurrent
                                 ? AppColors.primaryBlue
-                                : Colors.white,
+                                : Colors.white.withValues(alpha: 0.9),
                             fontWeight: isCurrent
                                 ? FontWeight.bold
                                 : FontWeight.normal,
-                            fontSize: 14,
+                            fontSize: 15,
                           ),
                         ),
                         subtitle: chap.chapterTitle.isNotEmpty
@@ -1431,16 +1400,16 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                                       ? AppColors.primaryBlue.withValues(
                                           alpha: 0.7,
                                         )
-                                      : Colors.white60,
-                                  fontSize: 11,
+                                      : Colors.white54,
+                                  fontSize: 12,
                                 ),
                               )
                             : null,
                         trailing: isCurrent
                             ? const Icon(
-                                Icons.check,
+                                Icons.check_circle_rounded,
                                 color: AppColors.primaryBlue,
-                                size: 18,
+                                size: 20,
                               )
                             : null,
                         onTap: () {
@@ -1461,7 +1430,7 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
 
     if (!mounted || selectedChapter == null) return;
 
-    await Future<void>.delayed(const Duration(milliseconds: 180));
+    await Future<void>.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
     _changeChapter(selectedChapter, comic);
   }
@@ -1490,99 +1459,88 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       bottom: bottomInset + 12,
       left: 12,
       right: 12,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          _buildReaderGlassCircleButton(
-            icon: Icons.keyboard_arrow_left_rounded,
-            tooltip: 'Chương trước',
-            enabled: hasPrev,
-            onPressed: () =>
-                _goToPreviousChapter(chaptersList, currentIdx, comic),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: InkWell(
-                  onTap: chaptersList.isEmpty
-                      ? null
-                      : () => _showChapterSelectionSheet(
-                          context,
-                          chaptersList,
-                          currentIdx,
-                          comic,
-                        ),
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    height: 40,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.58),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.14),
-                        width: 0.8,
+      child: RepaintBoundary(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            _buildReaderGlassCircleButton(
+              icon: Icons.keyboard_arrow_left_rounded,
+              tooltip: 'Chương trước',
+              enabled: hasPrev,
+              onPressed: () =>
+                  _goToPreviousChapter(chaptersList, currentIdx, comic),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: InkWell(
+                onTap: chaptersList.isEmpty
+                    ? null
+                    : () => _showChapterSelectionSheet(
+                        context,
+                        chaptersList,
+                        currentIdx,
+                        comic,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 18,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      width: 0.8,
                     ),
-                    child: Row(
-                      children: [
-                        Text(
-                          '$currentReadablePage/$totalReadablePages',
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        '$currentReadablePage/$totalReadablePages',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 16,
+                        margin: const EdgeInsets.symmetric(horizontal: 10),
+                        color: Colors.white.withValues(alpha: 0.18),
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Chương $currentChapterName',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        Container(
-                          width: 1,
-                          height: 16,
-                          margin: const EdgeInsets.symmetric(horizontal: 10),
-                          color: Colors.white.withValues(alpha: 0.18),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Chương $currentChapterName',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.keyboard_arrow_up,
-                          color: Colors.white70,
-                          size: 14,
-                        ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.keyboard_arrow_up,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          _buildReaderGlassCircleButton(
-            icon: Icons.keyboard_arrow_right_rounded,
-            tooltip: 'Chương sau',
-            enabled: hasNext,
-            onPressed: () => _goToNextChapter(chaptersList, currentIdx, comic),
-          ),
-        ],
+            const SizedBox(width: 8),
+            _buildReaderGlassCircleButton(
+              icon: Icons.keyboard_arrow_right_rounded,
+              tooltip: 'Chương sau',
+              enabled: hasNext,
+              onPressed: () => _goToNextChapter(chaptersList, currentIdx, comic),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1593,304 +1551,25 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     required bool enabled,
     required VoidCallback onPressed,
   }) {
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: enabled ? 0.58 : 0.34),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: enabled ? 0.14 : 0.08),
-              width: 0.8,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            tooltip: tooltip,
-            onPressed: enabled ? onPressed : null,
-            icon: Icon(
-              icon,
-              color: enabled ? Colors.white : Colors.white30,
-              size: 22,
-            ),
-          ),
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: enabled ? 0.85 : 0.45),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: enabled ? 0.14 : 0.08),
+          width: 0.8,
         ),
       ),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildBottomControls(
-    BuildContext context,
-    ReaderSettings settings,
-    AsyncValue<ComicDetailInfoModel> comicDetailAsync,
-  ) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-
-    return Positioned(
-      bottom: bottomInset + 12,
-      left: 12,
-      right: 12,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.58),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.14),
-                width: 0.8,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.25),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 1. Page Indicator / Progress Slider
-                if (_totalPages > 1)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4.0,
-                      vertical: 0.0,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          (settings.layout == 'horizontal' &&
-                                  _currentPage == _totalPages)
-                              ? 'Hết'
-                              : '$_currentPage',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Expanded(
-                          child: SliderTheme(
-                            data: SliderTheme.of(context).copyWith(
-                              trackHeight: 1.5,
-                              thumbShape: const RoundSliderThumbShape(
-                                enabledThumbRadius: 5.0,
-                              ),
-                              overlayShape: const RoundSliderOverlayShape(
-                                overlayRadius: 10.0,
-                              ),
-                              activeTrackColor: AppColors.primaryBlue,
-                              inactiveTrackColor: Colors.white24,
-                              thumbColor: AppColors.primaryBlue,
-                            ),
-                            child: Slider(
-                              value: _currentPage.toDouble().clamp(
-                                1.0,
-                                _totalPages.toDouble(),
-                              ),
-                              min: 1.0,
-                              max: _totalPages.toDouble(),
-                              onChanged: (value) {
-                                final targetPage = value.round();
-                                setState(() {
-                                  _currentPage = targetPage;
-                                });
-                                if (settings.layout == 'horizontal') {
-                                  _pageController.jumpToPage(targetPage - 1);
-                                } else {
-                                  if (_scrollController.hasClients) {
-                                    final maxScroll = _scrollController
-                                        .position
-                                        .maxScrollExtent;
-                                    final targetOffset =
-                                        (targetPage - 1) /
-                                        (_totalPages - 1) *
-                                        maxScroll;
-                                    _scrollController.jumpTo(targetOffset);
-                                  }
-                                }
-                              },
-                            ),
-                          ),
-                        ),
-                        Text(
-                          (settings.layout == 'horizontal')
-                              ? '${_totalPages - 1}'
-                              : '$_totalPages',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                const SizedBox(height: 2),
-
-                // 2. Chapter Skip Bar & Dropdown Select
-                comicDetailAsync.when(
-                  data: (comic) {
-                    ServerModel? matchedServer;
-                    for (final srv in comic.chapters) {
-                      if (srv.serverData.any(
-                        (c) => c.chapterSlug == widget.chapterSlug,
-                      )) {
-                        matchedServer = srv;
-                        break;
-                      }
-                    }
-                    final server =
-                        matchedServer ??
-                        (comic.chapters.isNotEmpty
-                            ? comic.chapters.first
-                            : null);
-                    final chaptersList = server != null
-                        ? server.serverData
-                        : <ChapterModel>[];
-                    final currentIdx = chaptersList.indexWhere(
-                      (c) => c.chapterSlug == widget.chapterSlug,
-                    );
-
-                    final hasPrev =
-                        _getPreviousChapterIndex(chaptersList, currentIdx) !=
-                        null;
-                    final hasNext =
-                        _getNextChapterIndex(chaptersList, currentIdx) != null;
-
-                    String currentChapterName =
-                        widget.chapterName ??
-                        widget.chapterSlug.replaceAll('chap-', '');
-                    if (currentIdx != -1) {
-                      currentChapterName = chaptersList[currentIdx].chapterName;
-                    }
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Skip to older chapter
-                        IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(6),
-                          onPressed: hasPrev
-                              ? () => _goToPreviousChapter(
-                                  chaptersList,
-                                  currentIdx,
-                                  comic,
-                                )
-                              : null,
-                          icon: Icon(
-                            Icons.skip_previous,
-                            color: hasPrev ? Colors.white : Colors.white24,
-                            size: 20,
-                          ),
-                          tooltip: 'Chương trước',
-                        ),
-
-                        // Dropdown chapter selector trigger
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12.0,
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                if (chaptersList.isNotEmpty) {
-                                  _showChapterSelectionSheet(
-                                    context,
-                                    chaptersList,
-                                    currentIdx,
-                                    comic,
-                                  );
-                                }
-                              },
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 6,
-                                  horizontal: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white10,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white24,
-                                    width: 0.8,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        'Chương $currentChapterName',
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Icon(
-                                      Icons.keyboard_arrow_up,
-                                      color: Colors.white70,
-                                      size: 14,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        // Skip to newer chapter
-                        IconButton(
-                          constraints: const BoxConstraints(),
-                          padding: const EdgeInsets.all(6),
-                          onPressed: hasNext
-                              ? () => _goToNextChapter(
-                                  chaptersList,
-                                  currentIdx,
-                                  comic,
-                                )
-                              : null,
-                          icon: Icon(
-                            Icons.skip_next,
-                            color: hasNext ? Colors.white : Colors.white24,
-                            size: 20,
-                          ),
-                          tooltip: 'Chương sau',
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
-              ],
-            ),
-          ),
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        tooltip: tooltip,
+        onPressed: enabled ? onPressed : null,
+        icon: Icon(
+          icon,
+          color: enabled ? Colors.white : Colors.white30,
+          size: 22,
         ),
       ),
     );
@@ -1944,7 +1623,7 @@ class _VerticalPageItemState extends State<_VerticalPageItem>
       ),
       errorWidget: (context, url, error) => Container(
         height: 200,
-        color: Colors.grey[900],
+        color: const Color(0xFF212121),
         child: const Center(
           child: Icon(Icons.broken_image, color: Colors.white30, size: 50),
         ),
