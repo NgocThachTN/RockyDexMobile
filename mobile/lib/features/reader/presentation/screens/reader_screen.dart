@@ -219,8 +219,8 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         currentIdx = chaptersList.indexWhere(
           (c) => c.chapterSlug == widget.chapterSlug,
         );
-        hasPrev = currentIdx != -1 && currentIdx < chaptersList.length - 1;
-        hasNext = currentIdx > 0;
+        hasPrev = _getPreviousChapterIndex(chaptersList, currentIdx) != null;
+        hasNext = _getNextChapterIndex(chaptersList, currentIdx) != null;
 
         // Resolve apiDataUrl if it was empty and chapter was found in chapters list
         if (initialApiDataUrl.isEmpty && currentIdx != -1) {
@@ -498,113 +498,92 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
       );
     }
 
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification notification) {
-        if (notification is OverscrollNotification && comicDetail != null) {
-          if (notification.overscroll > 10 &&
-              _currentPage >= _totalPages &&
-              hasNext) {
-            _goToNextChapter(chaptersList, currentIdx, comicDetail);
-            return true;
-          }
-          if (notification.overscroll < -10 && _currentPage <= 1 && hasPrev) {
-            _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
-            return true;
-          }
-        }
-        return false;
-      },
-      child: PhotoViewGallery.builder(
-        scrollPhysics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        pageController: _pageController,
-        builder: (BuildContext context, int index) {
-          if (index == 0) {
-            return PhotoViewGalleryPageOptions.customChild(
-              child: _buildChapterTurnPage(
-                context: context,
-                message: hasPrev
-                    ? 'Đang mở chương trước...'
-                    : 'Đây là trang đầu',
-              ),
-              initialScale: PhotoViewComputedScale.contained,
-              minScale: PhotoViewComputedScale.contained,
-            );
-          }
-
-          if (index == urls.length + 1) {
-            return PhotoViewGalleryPageOptions.customChild(
-              child: hasNext
-                  ? _buildChapterTurnPage(
-                      context: context,
-                      message: 'Đang mở chương sau...',
-                    )
-                  : _buildEndOfChapterPage(
-                      context: context,
-                      hasNext: hasNext,
-                      chaptersList: chaptersList,
-                      currentIdx: currentIdx,
-                      comicDetail: comicDetail,
-                      isHorizontal: true,
-                    ),
-              initialScale: PhotoViewComputedScale.contained,
-              minScale: PhotoViewComputedScale.contained,
-            );
-          }
-
-          final imageIndex = index - 1;
-          return PhotoViewGalleryPageOptions(
-            imageProvider: CachedNetworkImageProvider(urls[imageIndex]),
+    return PhotoViewGallery.builder(
+      scrollPhysics: const PageScrollPhysics(parent: ClampingScrollPhysics()),
+      pageController: _pageController,
+      builder: (BuildContext context, int index) {
+        if (index == 0) {
+          return PhotoViewGalleryPageOptions.customChild(
+            child: _buildChapterTurnPage(
+              context: context,
+              message: hasPrev ? 'Đang mở chương trước...' : 'Đây là trang đầu',
+            ),
             initialScale: PhotoViewComputedScale.contained,
             minScale: PhotoViewComputedScale.contained,
-            maxScale: PhotoViewComputedScale.covered * 2.5,
           );
-        },
-        itemCount: urls.length + 2,
-        loadingBuilder: (context, event) => const Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppColors.primaryBlue,
-          ),
+        }
+
+        if (index == urls.length + 1) {
+          return PhotoViewGalleryPageOptions.customChild(
+            child: hasNext
+                ? _buildChapterTurnPage(
+                    context: context,
+                    message: 'Đang mở chương sau...',
+                  )
+                : _buildEndOfChapterPage(
+                    context: context,
+                    hasNext: hasNext,
+                    chaptersList: chaptersList,
+                    currentIdx: currentIdx,
+                    comicDetail: comicDetail,
+                    isHorizontal: true,
+                  ),
+            initialScale: PhotoViewComputedScale.contained,
+            minScale: PhotoViewComputedScale.contained,
+          );
+        }
+
+        final imageIndex = index - 1;
+        return PhotoViewGalleryPageOptions(
+          imageProvider: CachedNetworkImageProvider(urls[imageIndex]),
+          initialScale: PhotoViewComputedScale.contained,
+          minScale: PhotoViewComputedScale.contained,
+          maxScale: PhotoViewComputedScale.covered * 2.5,
+        );
+      },
+      itemCount: urls.length + 2,
+      loadingBuilder: (context, event) => const Center(
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: AppColors.primaryBlue,
         ),
-        onPageChanged: (index) {
-          if (index == 0) {
-            if (hasPrev && comicDetail != null) {
-              _saveReadingProgress(0, 1);
-              _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
-            } else {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (_pageController.hasClients) {
-                  _pageController.jumpToPage(1);
-                }
-              });
-            }
-            return;
-          }
-
-          if (index == urls.length + 1) {
-            _saveReadingProgress(100, urls.length);
-            if (hasNext && comicDetail != null) {
-              _goToNextChapter(chaptersList, currentIdx, comicDetail);
-            } else {
-              setState(() {
-                _currentPage = urls.length;
-              });
-            }
-            return;
-          }
-
-          final actualPage = index.clamp(1, urls.length).toInt();
-          setState(() {
-            _currentPage = actualPage;
-          });
-          _saveReadingProgress(
-            (actualPage / urls.length * 100).toInt(),
-            actualPage,
-          );
-        },
       ),
+      onPageChanged: (index) {
+        if (index == 0) {
+          if (hasPrev && comicDetail != null) {
+            _saveReadingProgress(0, 1);
+            _goToPreviousChapter(chaptersList, currentIdx, comicDetail);
+          } else {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (_pageController.hasClients) {
+                _pageController.jumpToPage(1);
+              }
+            });
+          }
+          return;
+        }
+
+        if (index == urls.length + 1) {
+          _saveReadingProgress(100, urls.length);
+          if (hasNext && comicDetail != null) {
+            _goToNextChapter(chaptersList, currentIdx, comicDetail);
+          } else {
+            setState(() {
+              _currentPage = urls.length;
+            });
+          }
+          return;
+        }
+
+        final actualPage = index.clamp(1, urls.length).toInt();
+        setState(() {
+          _currentPage = actualPage;
+        });
+        _saveReadingProgress(
+          (actualPage / urls.length * 100).toInt(),
+          actualPage,
+        );
+      },
     );
   }
 
@@ -641,7 +620,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
         ? chaptersList[currentIdx].chapterName
         : widget.chapterSlug.replaceAll('chap-', '');
 
-    final nextChapter = hasNext ? chaptersList[currentIdx - 1] : null;
+    final nextChapterIndex = _getNextChapterIndex(chaptersList, currentIdx);
+    final nextChapter = nextChapterIndex != null
+        ? chaptersList[nextChapterIndex]
+        : null;
 
     return Container(
       width: double.infinity,
@@ -743,9 +725,6 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                 ElevatedButton(
                   onPressed: () {
                     if (!_isChangingChapter) {
-                      setState(() {
-                        _isChangingChapter = true;
-                      });
                       _changeChapter(nextChapter, comicDetail);
                     }
                   },
@@ -1224,13 +1203,45 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     );
   }
 
+  double? _parseChapterNumber(String chapterName) {
+    final match = RegExp(r'\d+(?:[.,]\d+)?').firstMatch(chapterName);
+    if (match == null) return null;
+    return double.tryParse(match.group(0)!.replaceAll(',', '.'));
+  }
+
+  bool _isChapterListAscending(List<ChapterModel> chapters) {
+    if (chapters.length < 2) return false;
+    final first = _parseChapterNumber(chapters.first.chapterName);
+    final last = _parseChapterNumber(chapters.last.chapterName);
+    if (first == null || last == null || first == last) return false;
+    return first < last;
+  }
+
+  int? _getNextChapterIndex(List<ChapterModel> chapters, int currentIdx) {
+    if (currentIdx < 0 || currentIdx >= chapters.length) return null;
+    final targetIdx = _isChapterListAscending(chapters)
+        ? currentIdx + 1
+        : currentIdx - 1;
+    return targetIdx >= 0 && targetIdx < chapters.length ? targetIdx : null;
+  }
+
+  int? _getPreviousChapterIndex(List<ChapterModel> chapters, int currentIdx) {
+    if (currentIdx < 0 || currentIdx >= chapters.length) return null;
+    final targetIdx = _isChapterListAscending(chapters)
+        ? currentIdx - 1
+        : currentIdx + 1;
+    return targetIdx >= 0 && targetIdx < chapters.length ? targetIdx : null;
+  }
+
   void _goToNextChapter(
     List<ChapterModel> chapters,
     int currentIdx,
     ComicDetailInfoModel comic,
   ) {
-    if (_isChangingChapter || currentIdx <= 0) return;
-    _changeChapter(chapters[currentIdx - 1], comic);
+    if (_isChangingChapter) return;
+    final targetIdx = _getNextChapterIndex(chapters, currentIdx);
+    if (targetIdx == null) return;
+    _changeChapter(chapters[targetIdx], comic);
   }
 
   void _goToPreviousChapter(
@@ -1238,12 +1249,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
     int currentIdx,
     ComicDetailInfoModel comic,
   ) {
-    if (_isChangingChapter ||
-        currentIdx < 0 ||
-        currentIdx >= chapters.length - 1) {
-      return;
-    }
-    _changeChapter(chapters[currentIdx + 1], comic);
+    if (_isChangingChapter) return;
+    final targetIdx = _getPreviousChapterIndex(chapters, currentIdx);
+    if (targetIdx == null) return;
+    _changeChapter(chapters[targetIdx], comic);
   }
 
   void _changeChapter(ChapterModel targetChap, ComicDetailInfoModel comic) {
@@ -1417,8 +1426,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
             (c) => c.chapterSlug == widget.chapterSlug,
           );
           final hasPrev =
-              currentIdx != -1 && currentIdx < chaptersList.length - 1;
-          final hasNext = currentIdx > 0;
+              _getPreviousChapterIndex(chaptersList, currentIdx) != null;
+          final hasNext =
+              _getNextChapterIndex(chaptersList, currentIdx) != null;
 
           String currentChapterName =
               widget.chapterName ?? widget.chapterSlug.replaceAll('chap-', '');
@@ -1713,9 +1723,10 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                     );
 
                     final hasPrev =
-                        currentIdx != -1 &&
-                        currentIdx < chaptersList.length - 1;
-                    final hasNext = currentIdx > 0;
+                        _getPreviousChapterIndex(chaptersList, currentIdx) !=
+                        null;
+                    final hasNext =
+                        _getNextChapterIndex(chaptersList, currentIdx) != null;
 
                     String currentChapterName =
                         widget.chapterName ??
@@ -1732,8 +1743,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           constraints: const BoxConstraints(),
                           padding: const EdgeInsets.all(6),
                           onPressed: hasPrev
-                              ? () => _changeChapter(
-                                  chaptersList[currentIdx + 1],
+                              ? () => _goToPreviousChapter(
+                                  chaptersList,
+                                  currentIdx,
                                   comic,
                                 )
                               : null,
@@ -1810,8 +1822,9 @@ class _ReaderScreenState extends ConsumerState<ReaderScreen> {
                           constraints: const BoxConstraints(),
                           padding: const EdgeInsets.all(6),
                           onPressed: hasNext
-                              ? () => _changeChapter(
-                                  chaptersList[currentIdx - 1],
+                              ? () => _goToNextChapter(
+                                  chaptersList,
+                                  currentIdx,
                                   comic,
                                 )
                               : null,

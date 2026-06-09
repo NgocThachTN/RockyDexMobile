@@ -30,7 +30,9 @@ class ComicRepository {
   }
 
   bool _isUuid(String slug) {
-    return RegExp(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$').hasMatch(slug);
+    return RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+    ).hasMatch(slug);
   }
 
   Future<ComicDetailInfoModel> getComicDetail(String slug) async {
@@ -39,14 +41,17 @@ class ComicRepository {
     }
 
     try {
-      final response = await _otruyenApi.get('${ApiConstants.pathComicDetail}/$slug');
+      final response = await _otruyenApi.get(
+        '${ApiConstants.pathComicDetail}/$slug',
+      );
       var responseData = response.data;
       if (responseData is String) {
         responseData = jsonDecode(responseData);
       }
       final rawData = responseData['data'];
       final rawItem = rawData['item'];
-      final cdnImage = rawData['APP_DOMAIN_CDN_IMAGE'] as String? ??
+      final cdnImage =
+          rawData['APP_DOMAIN_CDN_IMAGE'] as String? ??
           ApiConstants.otruyenImageBaseCdn;
 
       // Make cover URL absolute
@@ -63,10 +68,19 @@ class ComicRepository {
       final mappedChapters = rawChapters.map((srv) {
         final srvMap = Map<String, dynamic>.from(srv);
         final listData = srv['server_data'] as List;
-        srvMap['server_data'] = listData.map((chap) {
+        final mappedServerData = listData.map((chap) {
           final chapMap = Map<String, dynamic>.from(chap);
           return chapMap;
         }).toList();
+        mappedServerData.sort((a, b) {
+          final aNumber = _parseChapterNumber(a['chapter_name']?.toString());
+          final bNumber = _parseChapterNumber(b['chapter_name']?.toString());
+          if (aNumber != null && bNumber != null && aNumber != bNumber) {
+            return bNumber.compareTo(aNumber);
+          }
+          return 0;
+        });
+        srvMap['server_data'] = mappedServerData;
         return srvMap;
       }).toList();
       mappedItem['chapters'] = mappedChapters;
@@ -75,6 +89,13 @@ class ComicRepository {
     } catch (e) {
       throw Exception('Không thể tải chi tiết truyện: $e');
     }
+  }
+
+  double? _parseChapterNumber(String? chapterName) {
+    if (chapterName == null) return null;
+    final match = RegExp(r'\d+(?:[.,]\d+)?').firstMatch(chapterName);
+    if (match == null) return null;
+    return double.tryParse(match.group(0)!.replaceAll(',', '.'));
   }
 
   Future<ComicDetailInfoModel> _getMangaDexComicDetail(String id) async {
@@ -86,7 +107,7 @@ class ComicRepository {
           'includes[]': ['cover_art', 'author', 'artist'],
         },
       );
-      
+
       var detailData = detailResponse.data;
       if (detailData is String) {
         detailData = jsonDecode(detailData);
@@ -162,7 +183,10 @@ class ComicRepository {
       for (final tag in tagsList) {
         final tagId = tag['id'] as String? ?? '';
         final tagNameMap = tag['attributes']?['name'] as Map? ?? {};
-        final tagName = tagNameMap['en'] as String? ?? tagNameMap.values.firstOrNull as String? ?? '';
+        final tagName =
+            tagNameMap['en'] as String? ??
+            tagNameMap.values.firstOrNull as String? ??
+            '';
         categories.add(CategoryModel(id: tagId, name: tagName, slug: tagId));
       }
 
@@ -176,7 +200,7 @@ class ComicRepository {
           'includes[]': ['scanlation_group'],
         },
       );
-      
+
       var feedData = feedResponse.data;
       if (feedData is String) {
         feedData = jsonDecode(feedData);
@@ -193,12 +217,15 @@ class ComicRepository {
         final chNum = chAttrs['chapter'] as String? ?? '';
         final chTitle = chAttrs['title'] as String? ?? '';
         final chLang = chAttrs['translatedLanguage'] as String? ?? 'en';
-        
+
         final chapterModel = ChapterModel(
           filename: chId,
-          chapterName: chNum.isNotEmpty ? chNum : (chTitle.isNotEmpty ? chTitle : '0'),
+          chapterName: chNum.isNotEmpty
+              ? chNum
+              : (chTitle.isNotEmpty ? chTitle : '0'),
           chapterTitle: chTitle,
-          chapterApiData: '${ApiConstants.mangadexBaseUrl}/at-home/server/$chId',
+          chapterApiData:
+              '${ApiConstants.mangadexBaseUrl}/at-home/server/$chId',
         );
 
         if (chLang == 'vi') {
@@ -212,16 +239,24 @@ class ComicRepository {
 
       final List<ServerModel> servers = [];
       if (viChapters.isNotEmpty) {
-        servers.add(ServerModel(serverName: 'Tiếng Việt', serverData: viChapters));
+        servers.add(
+          ServerModel(serverName: 'Tiếng Việt', serverData: viChapters),
+        );
       }
       if (enChapters.isNotEmpty) {
-        servers.add(ServerModel(serverName: 'Tiếng Anh', serverData: enChapters));
+        servers.add(
+          ServerModel(serverName: 'Tiếng Anh', serverData: enChapters),
+        );
       }
       if (jaChapters.isNotEmpty) {
-        servers.add(ServerModel(serverName: 'Tiếng Nhật', serverData: jaChapters));
+        servers.add(
+          ServerModel(serverName: 'Tiếng Nhật', serverData: jaChapters),
+        );
       }
       if (servers.isEmpty) {
-        servers.add(const ServerModel(serverName: 'Tiếng Việt', serverData: []));
+        servers.add(
+          const ServerModel(serverName: 'Tiếng Việt', serverData: []),
+        );
       }
 
       return ComicDetailInfoModel(
@@ -254,10 +289,14 @@ class ComicRepository {
         'thumb_url': comic.thumbUrl,
         'created_at': DateTime.now().toIso8601String(),
       });
-      await _ref.read(libraryRepositoryProvider).addFavoriteRemote(comic.slug, comic.name, comic.thumbUrl);
+      await _ref
+          .read(libraryRepositoryProvider)
+          .addFavoriteRemote(comic.slug, comic.name, comic.thumbUrl);
     } else {
       await LocalStorage.deleteFavorite(comic.slug);
-      await _ref.read(libraryRepositoryProvider).removeFavoriteRemote(comic.slug);
+      await _ref
+          .read(libraryRepositoryProvider)
+          .removeFavoriteRemote(comic.slug);
     }
   }
 
@@ -281,15 +320,17 @@ class ComicRepository {
       'page_number': pageNumber,
       'last_read_at': DateTime.now().toIso8601String(),
     });
-    await _ref.read(libraryRepositoryProvider).saveHistoryRemote(
-      comicSlug: comicSlug,
-      comicName: comicName,
-      comicThumb: comicThumb,
-      chapterSlug: chapterSlug,
-      chapterName: chapterName,
-      progressPercent: progressPercent,
-      pageNumber: pageNumber,
-    );
+    await _ref
+        .read(libraryRepositoryProvider)
+        .saveHistoryRemote(
+          comicSlug: comicSlug,
+          comicName: comicName,
+          comicThumb: comicThumb,
+          chapterSlug: chapterSlug,
+          chapterName: chapterName,
+          progressPercent: progressPercent,
+          pageNumber: pageNumber,
+        );
   }
 
   Future<Map<String, dynamic>?> getReadingHistory(String comicSlug) async {
